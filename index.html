@@ -1,12 +1,126 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
-  <meta charset="UTF-8">
-  <title>Members Area – ProblemSolver</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Members – ProblemSolver</title>
+  <style>
+    body { font-family: Inter, Arial, sans-serif; margin: 0; padding: 40px; }
+    .card { max-width: 560px; margin: 0 auto; padding: 28px; border: 1px solid #eee; border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,.06); }
+    h1 { margin: 0 0 16px; font-size: 22px; }
+    p { color: #444; }
+    label { display:block; font-size:14px; margin: 14px 0 6px; }
+    input[type="email"]{ width:100%; padding:12px 14px; border:1px solid #ddd; border-radius:12px; font-size:16px; }
+    button{ margin-top:14px; padding:12px 16px; border:0; border-radius:12px; font-size:16px; cursor:pointer; }
+    .primary{ background:#FF6B00; color:#fff; }
+    .muted{ background:#f3f4f6; }
+    .row{ display:flex; gap:10px; align-items:center; }
+    .chip{ display:inline-block; padding:6px 10px; border-radius:999px; background:#f3f4f6; font-size:12px; }
+    .ok{ color:#0f9d58 } .err{ color:#d93025 }
+    .hidden{ display:none; }
+    .footer{ margin-top:18px; font-size:12px; color:#777; }
+  </style>
 </head>
 <body>
-  <h1 style="text-align:center;margin-top:50px;">
-    Members Area – Coming Soon 🚀
-  </h1>
+  <div class="card">
+    <h1>ProblemSolver – Members</h1>
+    <p id="status" class="chip">Έλεγχος σύνδεσης…</p>
+
+    <!-- NOT LOGGED IN -->
+    <div id="loginBox" class="hidden">
+      <p>Σύνδεση με <strong>magic link</strong> στο email σου.</p>
+      <label for="email">Email</label>
+      <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+      <button id="sendLink" class="primary">Στείλε μου Magic Link</button>
+      <p id="msg" class="footer"></p>
+    </div>
+
+    <!-- LOGGED IN -->
+    <div id="accountBox" class="hidden">
+      <p>Συνδέθηκες ως <strong id="who"></strong></p>
+      <div class="row">
+        <button id="logout" class="muted">Αποσύνδεση</button>
+        <!-- εδώ αργότερα θα μπουν: Credits, Questions, Answers -->
+      </div>
+      <p class="footer">Μόλις ολοκληρώσουμε, εδώ θα βλέπεις υπόλοιπο credits & ιστορικό.</p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    // ----- CONFIG (από εσένα) -----
+    const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        // να επιστρέφει στο ίδιο domain μετά το login
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+      },
+    });
+
+    const statusEl = document.getElementById('status');
+    const loginBox = document.getElementById('loginBox');
+    const accountBox = document.getElementById('accountBox');
+    const whoEl = document.getElementById('who');
+    const emailInput = document.getElementById('email');
+    const sendBtn = document.getElementById('sendLink');
+    const logoutBtn = document.getElementById('logout');
+    const msgEl = document.getElementById('msg');
+
+    function show(el){ el.classList.remove('hidden') }
+    function hide(el){ el.classList.add('hidden') }
+
+    async function refreshUI() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        statusEl.textContent = 'Συνδεδεμένος';
+        statusEl.className = 'chip ok';
+        whoEl.textContent = session.user.email || session.user.id;
+        hide(loginBox); show(accountBox);
+      } else {
+        statusEl.textContent = 'Δεν είσαι συνδεδεμένος';
+        statusEl.className = 'chip';
+        show(loginBox); hide(accountBox);
+      }
+    }
+
+    sendBtn?.addEventListener('click', async () => {
+      msgEl.textContent = '';
+      const email = emailInput.value.trim();
+      if (!email) {
+        msgEl.textContent = 'Βάλε email.';
+        msgEl.className = 'footer err';
+        return;
+      }
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.origin }
+      });
+      if (error) {
+        msgEl.textContent = 'Σφάλμα: ' + error.message;
+        msgEl.className = 'footer err';
+      } else {
+        msgEl.textContent = 'Σου στείλαμε link στο email. Άνοιξέ το από αυτή τη συσκευή.';
+        msgEl.className = 'footer ok';
+      }
+    });
+
+    logoutBtn?.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      await refreshUI();
+    });
+
+    // αρχικό UI
+    refreshUI();
+
+    // live αλλαγές συνεδρίας (π.χ. μετά το magic link)
+    supabase.auth.onAuthStateChange(async () => {
+      await refreshUI();
+    });
+  </script>
 </body>
 </html>
