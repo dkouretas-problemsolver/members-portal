@@ -19,6 +19,7 @@
     .ok{ color:#0f9d58 } .err{ color:#d93025 }
     .hidden{ display:none; }
     .footer{ margin-top:18px; font-size:12px; color:#777; }
+    a.btn{ display:inline-block; text-decoration:none; margin-left:10px; }
   </style>
 </head>
 <body>
@@ -26,7 +27,7 @@
     <h1>ProblemSolver – Members</h1>
     <p id="status" class="chip">Έλεγχος σύνδεσης…</p>
 
-    <!-- NOT LOGGED IN -->
+    <!-- ΜΗ ΣΥΝΔΕΔΕΜΕΝΟΣ -->
     <div id="loginBox" class="hidden">
       <p>Σύνδεση με <strong>magic link</strong> στο email σου.</p>
       <label for="email">Email</label>
@@ -35,92 +36,80 @@
       <p id="msg" class="footer"></p>
     </div>
 
-    <!-- LOGGED IN -->
+    <!-- ΣΥΝΔΕΔΕΜΕΝΟΣ -->
     <div id="accountBox" class="hidden">
       <p>Συνδέθηκες ως <strong id="who"></strong></p>
       <div class="row">
         <button id="logout" class="muted">Αποσύνδεση</button>
-        <!-- εδώ αργότερα θα μπουν: Credits, Questions, Answers -->
+        <a href="/dashboard.html" class="btn primary" style="color:#fff;">Μετάβαση στο Dashboard</a>
       </div>
-      <p class="footer">Μόλις ολοκληρώσουμε, εδώ θα βλέπεις υπόλοιπο credits & ιστορικό.</p>
+      <p class="footer">Μετά το login γίνεται αυτόματο redirect στο Dashboard.</p>
     </div>
   </div>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // ----- CONFIG (από εσένα) -----
+    // ----- ΤΑ ΔΙΚΑ ΣΟΥ ΣΤΟΙΧΕΙΑ -----
     const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk';
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        // να επιστρέφει στο ίδιο domain μετά το login
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-      },
+      auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
     });
 
-    const statusEl = document.getElementById('status');
-    const loginBox = document.getElementById('loginBox');
+    const statusEl   = document.getElementById('status');
+    const loginBox   = document.getElementById('loginBox');
     const accountBox = document.getElementById('accountBox');
-    const whoEl = document.getElementById('who');
+    const whoEl      = document.getElementById('who');
     const emailInput = document.getElementById('email');
-    const sendBtn = document.getElementById('sendLink');
-    const logoutBtn = document.getElementById('logout');
-    const msgEl = document.getElementById('msg');
+    const sendBtn    = document.getElementById('sendLink');
+    const logoutBtn  = document.getElementById('logout');
+    const msgEl      = document.getElementById('msg');
+
+    const DASH_URL = '/dashboard.html';
 
     function show(el){ el.classList.remove('hidden') }
     function hide(el){ el.classList.add('hidden') }
 
-    async function refreshUI() {
+    // Αν είναι ήδη συνδεδεμένος, πήγαινέ τον κατευθείαν στο dashboard
+    async function guardAndMaybeRedirect() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        statusEl.textContent = 'Συνδεδεμένος';
-        statusEl.className = 'chip ok';
+        // προβάλλουμε για 1” την κατάσταση και μετά redirect (για να δει ότι μπήκε)
         whoEl.textContent = session.user.email || session.user.id;
+        statusEl.textContent = 'Συνδεδεμένος'; statusEl.className = 'chip ok';
         hide(loginBox); show(accountBox);
+        setTimeout(() => { window.location.href = DASH_URL; }, 600);
+        return true;
       } else {
-        statusEl.textContent = 'Δεν είσαι συνδεδεμένος';
-        statusEl.className = 'chip';
+        statusEl.textContent = 'Δεν είσαι συνδεδεμένος'; statusEl.className = 'chip';
         show(loginBox); hide(accountBox);
+        return false;
       }
     }
 
     sendBtn?.addEventListener('click', async () => {
       msgEl.textContent = '';
       const email = emailInput.value.trim();
-      if (!email) {
-        msgEl.textContent = 'Βάλε email.';
-        msgEl.className = 'footer err';
-        return;
-      }
+      if (!email) { msgEl.textContent = 'Βάλε email.'; msgEl.className = 'footer err'; return; }
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: window.location.origin }
+        options: { emailRedirectTo: window.location.origin } // θα γυρίσει εδώ, και μετά κάνουμε redirect στο dashboard
       });
-      if (error) {
-        msgEl.textContent = 'Σφάλμα: ' + error.message;
-        msgEl.className = 'footer err';
-      } else {
-        msgEl.textContent = 'Σου στείλαμε link στο email. Άνοιξέ το από αυτή τη συσκευή.';
-        msgEl.className = 'footer ok';
-      }
+      if (error) { msgEl.textContent = 'Σφάλμα: ' + error.message; msgEl.className = 'footer err'; }
+      else { msgEl.textContent = 'Σου στείλαμε link στο email. Άνοιξέ το από αυτή τη συσκευή.'; msgEl.className = 'footer ok'; }
     });
 
     logoutBtn?.addEventListener('click', async () => {
       await supabase.auth.signOut();
-      await refreshUI();
+      // μετά το logout μένεις στην αρχική
+      await guardAndMaybeRedirect();
     });
 
-    // αρχικό UI
-    refreshUI();
-
-    // live αλλαγές συνεδρίας (π.χ. μετά το magic link)
-    supabase.auth.onAuthStateChange(async () => {
-      await refreshUI();
-    });
+    // Αρχικό state + όποτε αλλάζει συνεδρία (ανοίξεις magic link)
+    guardAndMaybeRedirect();
+    supabase.auth.onAuthStateChange(async () => { await guardAndMaybeRedirect(); });
   </script>
 </body>
 </html>
