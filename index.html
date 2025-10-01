@@ -16,7 +16,8 @@
     .muted{ background:#f3f4f6; }
     .row{ display:flex; gap:10px; align-items:center; }
     .chip{ display:inline-block; padding:6px 10px; border-radius:999px; background:#f3f4f6; font-size:12px; }
-    .ok{ color:#0f9d58 } .err{ color:#d93025 }
+    .ok{ color:#0f9d58 } 
+    .err{ color:#d93025 }
     .hidden{ display:none; }
     .footer{ margin-top:18px; font-size:12px; color:#777; }
     a.btn{ display:inline-block; text-decoration:none; margin-left:10px; }
@@ -50,7 +51,7 @@
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // ----- ΤΑ ΔΙΚΑ ΣΟΥ ΣΤΟΙΧΕΙΑ -----
+    // ====== ΒΑΛΕ ΕΔΩ ΤΑ ΔΙΚΑ ΣΟΥ SUPABASE ΣΤΟΙΧΕΙΑ ======
     const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk';
 
@@ -76,14 +77,15 @@
     async function guardAndMaybeRedirect() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        // προβάλλουμε για 1” την κατάσταση και μετά redirect (για να δει ότι μπήκε)
         whoEl.textContent = session.user.email || session.user.id;
-        statusEl.textContent = 'Συνδεδεμένος'; statusEl.className = 'chip ok';
+        statusEl.textContent = 'Συνδεδεμένος'; 
+        statusEl.className = 'chip ok';
         hide(loginBox); show(accountBox);
         setTimeout(() => { window.location.href = DASH_URL; }, 600);
         return true;
       } else {
-        statusEl.textContent = 'Δεν είσαι συνδεδεμένος'; statusEl.className = 'chip';
+        statusEl.textContent = 'Δεν είσαι συνδεδεμένος'; 
+        statusEl.className = 'chip';
         show(loginBox); hide(accountBox);
         return false;
       }
@@ -95,19 +97,23 @@
       if (!email) { msgEl.textContent = 'Βάλε email.'; msgEl.className = 'footer err'; return; }
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: window.location.origin } // θα γυρίσει εδώ, και μετά κάνουμε redirect στο dashboard
+        options: { emailRedirectTo: window.location.origin }
       });
-      if (error) { msgEl.textContent = 'Σφάλμα: ' + error.message; msgEl.className = 'footer err'; }
-      else { msgEl.textContent = 'Σου στείλαμε link στο email. Άνοιξέ το από αυτή τη συσκευή.'; msgEl.className = 'footer ok'; }
+      if (error) { 
+        msgEl.textContent = 'Σφάλμα: ' + error.message; 
+        msgEl.className = 'footer err'; 
+      }
+      else { 
+        msgEl.textContent = 'Σου στείλαμε link στο email. Άνοιξέ το από αυτή τη συσκευή.'; 
+        msgEl.className = 'footer ok'; 
+      }
     });
 
     logoutBtn?.addEventListener('click', async () => {
       await supabase.auth.signOut();
-      // μετά το logout μένεις στην αρχική
       await guardAndMaybeRedirect();
     });
 
-    // Αρχικό state + όποτε αλλάζει συνεδρία (ανοίξεις magic link)
     guardAndMaybeRedirect();
     supabase.auth.onAuthStateChange(async () => { await guardAndMaybeRedirect(); });
   </script>
