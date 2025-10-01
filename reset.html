@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Αλλαγή Κωδικού – ProblemSolver</title>
+  <style>
+    body { font-family: Inter, Arial, sans-serif; margin:0; padding:40px; }
+    .card { max-width: 520px; margin: 0 auto; padding: 24px; border:1px solid #eee; border-radius:16px; box-shadow:0 6px 24px rgba(0,0,0,.06); }
+    h1 { font-size: 20px; margin:0 0 12px; }
+    input { width:100%; padding:12px 14px; border:1px solid #ddd; border-radius:12px; font-size:16px; }
+    button{ margin-top:12px; padding:12px 16px; border:0; border-radius:12px; font-size:16px; cursor:pointer; background:#FF6B00; color:#fff; }
+    .msg { margin-top:10px; font-size:14px; color:#666; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Ορισμός νέου κωδικού</h1>
+    <p class="msg" id="info">Φόρτωμα…</p>
+    <div id="formBox" style="display:none">
+      <input id="pw1" type="password" placeholder="Νέος κωδικός" />
+      <input id="pw2" type="password" placeholder="Επανάληψη κωδικού" style="margin-top:10px;" />
+      <button id="setBtn">Αποθήκευση</button>
+      <p class="msg" id="msg"></p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    // ΒΑΛΕ τα ίδια με τα άλλα αρχεία
+    const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // το δικό σου
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
+    });
+
+    const info = document.getElementById('info');
+    const formBox = document.getElementById('formBox');
+    const setBtn = document.getElementById('setBtn');
+    const msg = document.getElementById('msg');
+
+    // Αν φτάσαμε εδώ από το email reset, το Supabase βάζει tokens στο URL (#access_token…)
+    // Μόλις τα “δει”, θεωρεί σε session τον χρήστη και μπορούμε να αλλάξουμε password.
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        info.textContent = 'Δεν βρέθηκε ενεργό reset link. Άνοιξε το link από το email ξανά.';
+        return;
+      }
+      info.textContent = 'Βρέθηκε λογαριασμός ' + (session.user?.email || '');
+      formBox.style.display = 'block';
+    })();
+
+    setBtn.addEventListener('click', async () => {
+      msg.textContent = '';
+      const p1 = document.getElementById('pw1').value;
+      const p2 = document.getElementById('pw2').value;
+      if (!p1 || p1 !== p2) { msg.textContent = 'Οι κωδικοί δεν ταιριάζουν.'; return; }
+
+      const { error } = await supabase.auth.updateUser({ password: p1 });
+      if (error) { msg.textContent = 'Σφάλμα: ' + error.message; return; }
+
+      msg.textContent = 'Ο κωδικός άλλαξε. Μεταφορά στο dashboard…';
+      setTimeout(() => { window.location.href = '/dashboard.html'; }, 700);
+    });
+  </script>
+</body>
+</html>
