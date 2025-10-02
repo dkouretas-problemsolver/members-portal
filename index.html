@@ -7,8 +7,10 @@
   <style>
     :root { --brand:#FF6B00; --muted:#777; }
     *{ box-sizing:border-box; }
-    body{ font-family: Inter, Arial, sans-serif; margin:0; background:#fafafa; }
+    body{ font-family: Inter, Arial, sans-serif; margin:0; background:#fafafa; color:#111;}
     .card{ max-width: 760px; margin: 28px auto; padding: 24px; border:1px solid #eee; border-radius:16px; background:#fff; box-shadow:0 6px 24px rgba(0,0,0,.06);}
+    .top{display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom:4px;}
+    .top img{ height:30px; }
     h1{ text-align:center; margin: 6px 0 18px; font-size:22px; }
     .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:28px; }
     label{ display:block; font-size:14px; margin: 14px 0 6px; }
@@ -22,6 +24,10 @@
     .msg.ok{ background:#ecfff2; color:#145a2a; border:1px solid #baf0c8; }
     .msg.err{ background:#fff1f1; color:#7d1a1a; border:1px solid #f0bcbc; }
     .hr{ border-top:1px solid #eee; margin:20px 0; }
+
+    /* Forgot panel */
+    #forgotPanel{ display:none; margin-top:16px; padding:16px; border:1px dashed #ddd; border-radius:12px; background:#fcfcfc; }
+    #forgotPanel .row{ margin-top:10px; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -30,15 +36,32 @@
   data-supabase-key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk"
 >
   <div class="card">
+    <div class="top">
+      <img src="/logo.png" alt="ProblemSolver"
+           onerror="this.replaceWith(Object.assign(document.createElement('div'),{innerHTML:'<b>Problem</b><span style=`color:#FF6B00;font-weight:700`>Solver</span>',style:'font-size:20px;font-weight:600;letter-spacing:.2px'}))">
+    </div>
     <h1>ProblemSolver – Members</h1>
 
+    <!-- Google -->
     <div class="row" style="justify-content:center">
-      <button id="googleBtn" class="btn ghost" type="button">Σύνδεση με Google</button>
+      <button id="googleBtn" class="btn ghost" type="button" aria-label="Σύνδεση με Google">
+        <span style="display:inline-flex;align-items:center;gap:8px;">
+          <!-- Google G icon -->
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3A12.9 12.9 0 0 1 24 36.5 12.5 12.5 0 1 1 24 11c3.2 0 6.1 1.2 8.3 3.2l5.7-5.7C34.3 4.6 29.4 2.5 24 2.5 16 2.5 8.9 7 6.3 14.7z"/>
+            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8A12.5 12.5 0 0 1 24 11c3.2 0 6.1 1.2 8.3 3.2l5.7-5.7C34.3 4.6 29.4 2.5 24 2.5 16 2.5 8.9 7 6.3 14.7z"/>
+            <path fill="#4CAF50" d="M24 45.5c5.3 0 10.1-1.8 13.8-4.9l-6.4-5.2A12.7 12.7 0 0 1 24 36.5c-5.1 0-9.5-3.2-11.2-7.7l-6.5 5C12 38.4 17.6 41.5 24 41.5c7.8 0 14.8-5.5 16.5-13 .4-1.3 .6-2.6 .6-4z"/>
+            <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.3 3.7-4.6 6.4-8.3 6.5-5.1 0-9.5-3.2-11.2-7.7l-6.5 5C12 38.4 17.6 41.5 24 41.5c7.8 0 14.8-5.5 16.5-13 .4-1.3 .6-2.6 .6-4z"/>
+          </svg>
+          Σύνδεση με Google
+        </span>
+      </button>
     </div>
 
     <div class="hr"></div>
 
     <div class="grid">
+      <!-- Αριστερά: Email/Password -->
       <div>
         <h3 style="margin:0 0 6px; font-size:16px;">Σύνδεση με Κωδικό</h3>
         <label>Email</label>
@@ -49,9 +72,13 @@
           <button id="loginBtn" class="btn" type="button">Σύνδεση</button>
           <button id="signupBtn" class="btn ghost" type="button">Δημιουργία Λογαριασμού</button>
         </div>
+        <div class="row" style="margin-top:8px;">
+          <a id="forgotLink" href="#" style="font-size:13px;color:#0b57d0;text-decoration:none;">Ξέχασα τον κωδικό</a>
+        </div>
         <div id="leftMsg" class="msg"></div>
       </div>
 
+      <!-- Δεξιά: Magic Link -->
       <div>
         <h3 style="margin:0 0 6px; font-size:16px;">Σύνδεση με Magic Link</h3>
         <label>Email</label>
@@ -62,6 +89,19 @@
         <div class="muted" style="margin-top:8px;">Θα λάβεις email με σύνδεσμο μίας χρήσης.</div>
         <div id="rightMsg" class="msg"></div>
       </div>
+    </div>
+
+    <!-- Forgot Password Panel -->
+    <div id="forgotPanel">
+      <h3 style="margin:0 0 8px;">Επαναφορά κωδικού</h3>
+      <label>Email</label>
+      <input id="forgotEmailInput" type="email" placeholder="you@example.com" autocomplete="email" />
+      <div class="row">
+        <button id="forgotBtn" class="btn" type="button">Στείλε σύνδεσμο επαναφοράς</button>
+        <button id="forgotCloseBtn" class="btn ghost" type="button">Κλείσιμο</button>
+      </div>
+      <div class="muted" style="margin-top:8px;">Αν υπάρχει λογαριασμός με αυτό το email, θα λάβεις οδηγίες.</div>
+      <div id="forgotMsg" class="msg"></div>
     </div>
 
     <div class="hr"></div>
@@ -80,8 +120,8 @@
   const $ = (id)=>document.getElementById(id);
   const show = (el, txt, ok=false)=>{ el.textContent=txt; el.className='msg '+(ok?'ok':'err'); el.style.display='block'; };
   const hide = (el)=>{ el.style.display='none'; };
-  const redirectBack = location.origin + '/';          // ΟΛΑ τα flows επιστρέφουν εδώ (root)
-  const goDashboard = ()=> location.replace(location.origin + '/dashboard.html');
+  const redirectBack = location.origin + '/';                // όλα τα flows γυρίζουν εδώ
+  const goDashboard  = ()=> location.replace(location.origin + '/dashboard.html');
 
   // Elements
   const emailInput=$('emailInput'), passwordInput=$('passwordInput'), leftMsg=$('leftMsg');
@@ -119,20 +159,29 @@
     provider:'google', options:{ redirectTo: redirectBack }
   });
 
-  // 1) Αν επέστρεψες από email/OAuth με ?code=... → κάνε exchange, μετά dashboard
+  // Forgot Password
+  $('forgotLink').onclick = (e)=>{ e.preventDefault(); $('forgotPanel').style.display='block'; $('forgotEmailInput').value = emailInput.value || ''; };
+  $('forgotCloseBtn').onclick = ()=>{ $('forgotPanel').style.display='none'; hide($('forgotMsg')); };
+  $('forgotBtn').onclick = async ()=>{
+    hide($('forgotMsg'));
+    const { error } = await supabase.auth.resetPasswordForEmail($('forgotEmailInput').value, { redirectTo: redirectBack });
+    if (error) return show($('forgotMsg'), error.message);
+    show($('forgotMsg'), 'Έλεγξε το email σου για οδηγίες επαναφοράς.', true);
+  };
+
+  // Αν γυρίσαμε από email/OAuth με ?code=
   (async ()=>{
     const q = new URLSearchParams(location.search);
     const code = q.get('code');
     if (code) {
       const { error } = await supabase.auth.exchangeCodeForSession({ code });
       if (error) return show(globalMsg,'Σφάλμα σύνδεσης. Δοκίμασε ξανά.');
-      // καθάρισε params
       const u=new URL(location); ['code','state','type'].forEach(k=>u.searchParams.delete(k)); history.replaceState({},'',u);
       goDashboard();
     }
   })();
 
-  // 2) Αν ήδη έχεις session (π.χ. γύρισες στο index), πήγαινε κατευθείαν dashboard
+  // Αν ήδη υπάρχει session → κατευθείαν dashboard
   (async ()=>{
     const { data } = await supabase.auth.getSession();
     if (data?.session) goDashboard();
