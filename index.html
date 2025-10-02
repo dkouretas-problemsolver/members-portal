@@ -101,7 +101,7 @@
       <div id="forgotMsg" class="msg"></div>
     </div>
 
-    <!-- Panel: Recovery (2ο βήμα με το link από email) -->
+    <!-- Panel: Recovery -->
     <div id="recoveryPanel">
       <h3>Ορισμός νέου κωδικού</h3>
       <label>Νέος κωδικός</label>
@@ -129,7 +129,7 @@
   }
   function clearMsg(el){ el.style.display='none'; el.textContent=''; }
 
-  // Πού θα πάει ο χρήστης μετά το login
+  // Redirect μετά το login
   const goHome = () => {
     const home = window.location.origin + '/dashboard'; // άλλαξέ το αν θες
     window.location.replace(home);
@@ -137,10 +137,10 @@
 
   // Καθάρισμα URL από code/state/type
   function cleanAuthParams() {
-    const url = new URL(window.location.href);
-    ['code','state','type'].forEach(k => url.searchParams.delete(k));
-    if (url.hash) url.hash = ''; // καθάρισε hash (π.χ. #access_token ...)
-    window.history.replaceState({}, document.title, url.toString());
+    const u = new URL(window.location.href);
+    ['code','state','type'].forEach(k => u.searchParams.delete(k));
+    if (u.hash) u.hash = '';
+    window.history.replaceState({}, document.title, u.toString());
   }
 
   // ---- Elements ----
@@ -217,7 +217,7 @@
     });
   });
 
-  // ---- Forgot Password (Reset) ----
+  // ---- Forgot Password ----
   forgotLink.addEventListener('click', (e) => {
     e.preventDefault();
     if(emailInput.value) forgotEmailInput.value = emailInput.value;
@@ -255,9 +255,9 @@
   (async function handleReturn() {
     const search = new URLSearchParams(window.location.search);
     const hash = new URLSearchParams(window.location.hash.replace('#',''));
-    const code = search.get('code');           // PKCE (magic link, oauth, recovery)
-    const typeQ = search.get('type');          // μερικές ροές βάζουν ?type=recovery
-    const typeH = hash.get('type');            // παλιότερα ήταν στο hash
+    const code = search.get('code');
+    const typeQ = search.get('type');
+    const typeH = hash.get('type');
     const isRecovery = (typeQ === 'recovery' || typeH === 'recovery');
 
     try {
@@ -266,16 +266,14 @@
         if (error) {
           console.error('[exchangeCodeForSession]', error);
           cleanAuthParams();
-          return; // θα μείνει στη login σελίδα
+          return;
         }
         cleanAuthParams();
         if (isRecovery) {
-          // Άνοιξε κατευθείαν το πάνελ ορισμού νέου κωδικού
-          document.getElementById('recoveryPanel').style.display = 'block';
-          document.getElementById('newPasswordInput').focus();
+          recoveryPanel.style.display = 'block';
+          newPasswordInput.focus();
           return;
         }
-        // Κανονική σύνδεση → στο dashboard
         goHome();
         return;
       }
@@ -283,23 +281,18 @@
       console.error('[handleReturn catch]', e);
     }
 
-    // Back-compat: αν επέστρεψε με access_token στο hash (παλιά ροή)
     if (hash.get('access_token')) {
       cleanAuthParams();
       if (isRecovery) {
-        document.getElementById('recoveryPanel').style.display = 'block';
-        document.getElementById('newPasswordInput').focus();
+        recoveryPanel.style.display = 'block';
+        newPasswordInput.focus();
       } else {
         goHome();
       }
     }
   })();
 
-  // ---- Set new password after recovery ----
-  const recoveryMsg = document.getElementById('recoveryMsg');
-  const newPasswordInput = document.getElementById('newPasswordInput');
-  const setNewPassBtn = document.getElementById('setNewPassBtn');
-
+  // ---- Set new password after recovery (ΧΩΡΙΣ επαναδηλώσεις) ----
   setNewPassBtn.addEventListener('click', async () => {
     clearMsg(recoveryMsg);
     const newPass = newPasswordInput.value;
