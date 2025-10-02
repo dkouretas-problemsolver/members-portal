@@ -166,13 +166,20 @@
     // window.location.href = '/app';
   });
 
+  // *** FIX: pass emailRedirectTo so the confirmation email is allowed ***
   signupBtn.addEventListener('click', async () => {
     clearMsg(leftMsg);
     const email = emailInput.value.trim();
     const password = passwordInput.value;
     if(!email || !password) return showMsg(leftMsg, 'Συμπλήρωσε email και κωδικό για εγγραφή.');
-    const { error } = await supabase.auth.signUp({ email, password });
-    if(error) return showMsg(leftMsg, error.message || 'Αποτυχία εγγραφής.');
+    const { error } = await supabase.auth.signUp({
+      email, password,
+      options: { emailRedirectTo: window.location.origin + window.location.pathname }
+    });
+    if(error){
+      console.error('[signUp]', error);
+      return showMsg(leftMsg, error.message || 'Αποτυχία εγγραφής (email επιβεβαίωσης).');
+    }
     showMsg(leftMsg, 'Σου στείλαμε email επιβεβαίωσης.', true);
   });
 
@@ -216,7 +223,7 @@
         redirectTo: window.location.origin + window.location.pathname
       });
       if(error){
-        console.error('[resetPasswordForEmail]', error); // Δείχνει το πραγματικό cause στα DevTools
+        console.error('[resetPasswordForEmail]', error);
         if (error.status === 429 || /rate limit/i.test(error.message)) {
           return showMsg(forgotMsg,'Στείλαμε ήδη πρόσφατα email. Δοκίμασε ξανά σε ~1–2 λεπτά.');
         }
@@ -234,11 +241,10 @@
     const hash = new URLSearchParams(window.location.hash.replace('#',''));
     const type = hash.get('type');
     if(type === 'recovery'){
-      await supabase.auth.getSession(); // δένει το session από το hash
+      await supabase.auth.getSession();
       recoveryPanel.style.display = 'block';
       newPasswordInput.focus();
     }
-    // Dev-shortcut για UI test χωρίς email: ?testReset=1
     if (new URLSearchParams(location.search).get('testReset') === '1') {
       recoveryPanel.style.display = 'block';
     }
