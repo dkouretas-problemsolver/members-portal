@@ -2,217 +2,205 @@
 <html lang="el">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Members – ProblemSolver</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ProblemSolver – Members</title>
   <style>
-    :root{
-      --brand:#FF6B00;
-      --text:#222;
-      --muted:#666;
-      --line:#e9e9e9;
-      --bg:#fafafa;
-      --radius:16px;
-    }
-    html,body{height:100%}
-    body{
-      margin:0; padding:24px; background:var(--bg);
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--text);
-    }
-    .wrap{ max-width: 760px; margin:0 auto; display:grid; gap:18px; }
-    .card{
-      background:#fff; border:1px solid var(--line); border-radius:var(--radius);
-      box-shadow:0 6px 24px rgba(0,0,0,.06); padding:22px;
-    }
-    .grid{ display:grid; gap:12px }
-    h1{ margin:0 0 6px; font-size:22px }
-    p.lead{ margin:0 0 6px; color:var(--muted); font-size:14px }
-    label{ font-size:13px; color:#444 }
-    input[type="email"],input[type="password"]{
+    :root { --brand:#FF6B00; }
+    *{ box-sizing:border-box; }
+    body { font-family: Inter, Arial, sans-serif; margin: 0; padding: 32px; background:#fafafa; }
+    .card { max-width: 720px; margin: 0 auto; padding: 22px; border: 1px solid #eee; border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,.06); background:#fff; }
+    img.logo { max-width:140px; display:block; margin:0 auto 6px; }
+    h1 { margin:6px 0 10px; font-size: 22px; text-align:center; }
+    #status { display:inline-block; margin: 6px auto 10px; }
+    p { color: #444; }
+    label { display:block; font-size:13px; margin: 8px 0 6px; }
+    input[type="email"], input[type="password"]{
       width:100%; padding:12px 14px; border:1px solid #ddd; border-radius:12px; font-size:16px;
-      outline:none;
+      background:#fff;
     }
-    input:focus{ border-color:#bbb }
-    .row{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
-    .btn{
-      appearance:none; border:0; border-radius:12px; padding:12px 16px; cursor:pointer;
-      font-size:16px; background:var(--brand); color:#fff;
+    input + input{ margin-top:8px; }
+    button{ margin-top:12px; padding:12px 16px; border:0; border-radius:12px; font-size:16px; cursor:pointer; }
+    .primary{ background:var(--brand); color:#fff; }
+    .muted{ background:#f3f4f6; }
+    .chip{ padding:6px 10px; border-radius:999px; background:#f3f4f6; font-size:12px; }
+    .ok{ color:#0f9d58 } .err{ color:#d93025 }
+    .footer{ margin-top:10px; font-size:12px; color:#777; }
+    .hr{ height:1px; background:#eee; margin:16px 0; }
+    .row{ display:flex; gap:40px; align-items:flex-start; justify-content:space-between; margin-top:16px; }
+    .col{ flex:1; }
+    .col .box{ padding:10px 0; }
+    .google-wrap { text-align:center; margin: 10px 0 6px; }
+    .btn-google{
+      display:inline-flex; align-items:center; gap:10px;
+      padding:10px 14px; border-radius:12px; border:1px solid #ddd;
+      background:#fff; color:#222; font-weight:500; cursor:pointer;
     }
-    .btn.secondary{ background:#111; color:#fff }
-    .btn.ghost{
-      background:#fff; color:#111; border:1px solid #ddd; display:flex; align-items:center; gap:10px; justify-content:center;
-    }
-    .muted{ color:var(--muted); font-size:13px }
-    .error{ color:#c00; font-size:13px; margin-top:6px }
-    .divider{ height:1px; background:var(--line); margin:8px 0 }
-    .topbar{ display:flex; align-items:center; justify-content:space-between; }
-    .brand{ display:flex; gap:10px; align-items:center; font-weight:700 }
-    .brand .dot{ width:10px; height:10px; background:var(--brand); border-radius:50% }
-    .actions{ display:flex; gap:8px; }
-    .link{ background:none; border:0; color:#0b66ff; padding:0; cursor:pointer; font-size:14px }
-    .center{ text-align:center }
-    .hidden{ display:none !important }
+    .btn-google:hover{ background:#f7f7f7; }
+    .g-icon{ width:18px; height:18px; display:inline-block; }
+    .link{ background:none; border:0; color:#0b66ff; padding:0; cursor:pointer; }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="card">
+    <!-- ΛΟΓΟΤΥΠΟ / ΤΙΤΛΟΣ -->
+    <img src="brandmark-design-1080x1080.png" alt="ProblemSolver Logo" class="logo" />
+    <h1>ProblemSolver – Members</h1>
+    <p id="status" class="chip">Δεν είσαι συνδεδεμένος</p>
 
-    <div class="topbar">
-      <div class="brand"><span class="dot"></span> ProblemSolver – Members</div>
-      <div class="actions">
-        <button id="toLogin" class="link">Σύνδεση</button>
-        <button id="toSignup" class="link">Εγγραφή</button>
-      </div>
+    <!-- Google -->
+    <div class="google-wrap">
+      <button id="googleBtn" class="btn-google">
+        <span class="g-icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48">
+            <path fill="#FFC107" d="M43.611 20.083h-1.611V20H24v8h11.303C33.928 31.91 29.329 35 24 35c-7.18 0-13-5.82-13-13s5.82-13 13-13c3.115 0 5.964 1.108 8.185 2.941l5.657-5.657C34.759 3.174 29.624 1 24 1 11.85 1 2 10.85 2 23s9.85 22 22 22c11.041 0 21-8 21-22 0-1.258-.135-2.477-.389-3.917z"/>
+            <path fill="#FF3D00" d="M6.306 14.691l6.571 4.817C14.242 16.33 18.77 13 24 13c3.115 0 5.964 1.108 8.185 2.941l5.657-5.657C34.759 3.174 29.624 1 24 1 15.322 1 7.871 5.937 4.306 13.309l2 1.382z"/>
+            <path fill="#4CAF50" d="M24 45c5.24 0 10.003-1.943 13.61-5.17l-6.278-5.318C29.211 36.488 26.77 37 24 37c-5.304 0-9.882-3.4-11.922-7.528l-6.58 5.07C8.994 40.777 15.94 45 24 45z"/>
+            <path fill="#1976D2" d="M43.611 20.083H24v8h11.303A12.01 12.01 0 0 1 24 37c-5.304 0-9.882-3.07-11.922-7.528l-6.58 5.07C8.994 40.777 15.94 45 24 45c11.041 0 21-8 21-22 0-1.258-.135-2.477-.389-3.917z"/>
+          </svg>
+        </span>
+        <span>Σύνδεση με Google</span>
+      </button>
     </div>
 
-    <!-- LOGIN -->
-    <section id="loginCard" class="card">
-      <h1>Σύνδεση</h1>
-      <p class="lead">Μπες με email/κωδικό ή με Google.</p>
-      <div class="grid">
-        <label for="login-email">Email</label>
-        <input id="login-email" type="email" placeholder="name@domain.gr" autocomplete="username" />
-        <label for="login-password">Κωδικός</label>
-        <input id="login-password" type="password" placeholder="Ο κωδικός σου" autocomplete="current-password" />
-        <button id="loginBtn" class="btn">Σύνδεση</button>
-        <div class="row">
-          <button id="googleBtn" class="btn ghost" type="button" title="Σύνδεση με Google">
-            <!-- Google G SVG (inline για να φαίνεται πάντα) -->
-            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-              <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.5 32.6 29.1 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c10.2 0 19-7.4 19-20 0-1.3-.1-2.7-.4-3.5z"/>
-              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.8 16.6 19 14 24 14c3 0 5.7 1.1 7.8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16 4 9.1 8.4 6.3 14.7z"/>
-              <path fill="#4CAF50" d="M24 44c5 0 9.6-1.9 13-5.1l-6-4.9C29 35.3 26.7 36 24 36c-5 0-9.3-3.4-10.8-8.1l-6.7 5.1C9.2 39.6 16 44 24 44z"/>
-              <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.3 3.7-4.8 6-11.3 6-5 0-9.3-3.4-10.8-8.1l-6.7 5.1C9.2 39.6 16 44 24 44c10.2 0 19-7.4 19-20 0-1.3-.1-2.7-.4-3.5z"/>
-            </svg>
-            Σύνδεση με Google
-          </button>
-          <button id="forgotLink" class="link" type="button">Ξέχασα τον κωδικό</button>
+    <div class="hr"></div>
+
+    <!-- ΔΥΟ ΞΕΧΩΡΙΣΤΕΣ ΦΟΡΜΕΣ (όπως τις είχες) -->
+    <div class="row">
+
+      <!-- Κωδικός -->
+      <div class="col">
+        <div class="box">
+          <h3>Σύνδεση με Κωδικό</h3>
+          <label for="emailLogin">Email</label>
+          <input id="emailLogin" type="email" placeholder="you@example.com" autocomplete="email" />
+          <label for="passwordLogin">Κωδικός</label>
+          <input id="passwordLogin" type="password" placeholder="••••••••" autocomplete="current-password" />
+          <button id="loginBtn" class="primary">Σύνδεση</button>
+          <button id="signupBtn" class="muted">Δημιουργία Λογαριασμού</button>
+          <p class="footer">
+            <!-- ΜΟΝΗ ΑΛΛΑΓΗ: από link σε κουμπί που στέλνει reset email -->
+            <button id="forgotLink" class="link" type="button">Ξέχασα τον κωδικό</button>
+            <span id="forgotMsg" class="footer"></span>
+          </p>
         </div>
-        <div id="loginErr" class="error hidden"></div>
       </div>
-    </section>
 
-    <!-- SIGNUP -->
-    <section id="signupCard" class="card hidden">
-      <h1>Εγγραφή</h1>
-      <p class="lead">Δημιούργησε λογαριασμό.</p>
-      <div class="grid">
-        <label for="su-email">Email</label>
-        <input id="su-email" type="email" placeholder="name@domain.gr" autocomplete="email" />
-        <label for="su-password">Κωδικός</label>
-        <input id="su-password" type="password" placeholder="Δημιούργησε κωδικό (8+ χαρακτήρες)" autocomplete="new-password" />
-        <label for="su-password2">Επανάληψη κωδικού</label>
-        <input id="su-password2" type="password" placeholder="Ξαναγράψε τον κωδικό" autocomplete="new-password" />
-        <button id="signupBtn" class="btn secondary">Εγγραφή</button>
-        <div id="signupErr" class="error hidden"></div>
-        <p class="muted">Έχεις ήδη λογαριασμό; <button class="link" id="goLogin">Σύνδεση</button></p>
+      <!-- Magic Link -->
+      <div class="col">
+        <div class="box">
+          <h3>Σύνδεση με Magic Link</h3>
+          <label for="emailMagic">Email</label>
+          <input id="emailMagic" type="email" placeholder="you@example.com" autocomplete="email" />
+          <button id="sendLink" class="primary">Στείλε μου Magic Link</button>
+          <p id="msg" class="footer"></p>
+        </div>
       </div>
-    </section>
 
-    <!-- FORGOT -->
-    <section id="forgotCard" class="card hidden">
-      <h1>Ανάκτηση κωδικού</h1>
-      <p class="lead">Θα σου στείλουμε email με σύνδεσμο επαναφοράς.</p>
-      <div class="grid">
-        <label for="fp-email">Email</label>
-        <input id="fp-email" type="email" placeholder="name@domain.gr" autocomplete="email" />
-        <button id="sendResetBtn" class="btn">Στείλε σύνδεσμο</button>
-        <div id="forgotInfo" class="muted"></div>
-        <div id="forgotErr" class="error hidden"></div>
-        <div class="divider"></div>
-        <p class="muted">Θυμήθηκες τον κωδικό; <button id="backToLogin" class="link">Πίσω στη σύνδεση</button></p>
-      </div>
-    </section>
-
-    <p class="center muted">© ProblemSolver</p>
+    </div>
   </div>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // ------- Supabase -------
-    const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co'
-    const SUPABASE_ANON_KEY = 'PASTE_YOUR_ANON_KEY_HERE'
+    // ΒΑΛΕ τα δικά σου:
+    const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk';
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { autoRefreshToken:true, persistSession:true, detectSessionInUrl:true }
-    })
-    // expose για γρήγορο debug
-    window.supabase = supabase
+    });
 
-    // ------- UI refs -------
-    const loginCard = document.getElementById('loginCard')
-    const signupCard = document.getElementById('signupCard')
-    const forgotCard = document.getElementById('forgotCard')
-    const show = (el)=>el.classList.remove('hidden')
-    const hide = (el)=>el.classList.add('hidden')
+    const statusEl = document.getElementById('status');
+    const msgEl    = document.getElementById('msg');
 
-    // Nav
-    document.getElementById('toLogin').onclick = ()=>{ show(loginCard); hide(signupCard); hide(forgotCard) }
-    document.getElementById('toSignup').onclick = ()=>{ hide(loginCard); show(signupCard); hide(forgotCard) }
-    document.getElementById('goLogin').onclick = ()=>{ show(loginCard); hide(signupCard); hide(forgotCard) }
-    document.getElementById('forgotLink').onclick = ()=>{ hide(loginCard); hide(signupCard); show(forgotCard) }
-    document.getElementById('backToLogin').onclick = ()=>{ show(loginCard); hide(signupCard); hide(forgotCard) }
+    async function updateStatus() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        statusEl.textContent = "Συνδεδεμένος: " + (session.user.email || "");
+        statusEl.className = "chip ok";
+        window.location.href = "/dashboard.html";
+      } else {
+        statusEl.textContent = "Δεν είσαι συνδεδεμένος";
+        statusEl.className = "chip";
+      }
+    }
 
-    // ------- LOGIN -------
-    const loginBtn = document.getElementById('loginBtn')
-    const loginErr = document.getElementById('loginErr')
-    loginBtn.addEventListener('click', async (e)=>{
-      e.preventDefault()
-      loginErr.classList.add('hidden'); loginErr.textContent=''
-      const email = document.getElementById('login-email').value.trim()
-      const password = document.getElementById('login-password').value
-      if(!email || !password){ loginErr.textContent='Συμπλήρωσε email και κωδικό.'; loginErr.classList.remove('hidden'); return }
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if(error){ loginErr.textContent = 'Σφάλμα: ' + error.message; loginErr.classList.remove('hidden'); return }
-      window.location.href = '/dashboard.html'
-    })
-
-    // Google OAuth (με logo που φαίνεται, χωρίς popup block)
-    document.getElementById('googleBtn').addEventListener('click', async (e)=>{
-      e.preventDefault()
+    // Google
+    document.getElementById('googleBtn')?.addEventListener('click', async () => {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider:'google',
-        options: { redirectTo: 'https://members.problemsolver.gr/dashboard.html' }
-      })
-      if(error) alert('Google σύνδεση: ' + error.message)
-    })
+        provider: 'google',
+        options: { redirectTo: window.location.origin + '/dashboard.html' }
+      });
+      if (error) alert(error.message);
+    });
 
-    // ------- SIGNUP -------
-    const signupBtn = document.getElementById('signupBtn')
-    const signupErr = document.getElementById('signupErr')
-    signupBtn.addEventListener('click', async (e)=>{
-      e.preventDefault()
-      signupErr.classList.add('hidden'); signupErr.textContent=''
-      const email = document.getElementById('su-email').value.trim()
-      const p1 = document.getElementById('su-password').value
-      const p2 = document.getElementById('su-password2').value
-      if(!email || !p1 || !p2){ signupErr.textContent='Συμπλήρωσε όλα τα πεδία.'; signupErr.classList.remove('hidden'); return }
-      if(p1 !== p2){ signupErr.textContent='Οι κωδικοί δεν ταιριάζουν.'; signupErr.classList.remove('hidden'); return }
-      const { error } = await supabase.auth.signUp({ email, password:p1 })
-      if(error){ signupErr.textContent='Σφάλμα: '+error.message; signupErr.classList.remove('hidden'); return }
-      alert('Έγινε εγγραφή. Έλεγξε το email σου για επιβεβαίωση (αν απαιτείται).')
-      show(loginCard); hide(signupCard); hide(forgotCard)
-    })
+    // Magic link
+    document.getElementById('sendLink')?.addEventListener('click', async () => {
+      msgEl.textContent = '';
+      const email = document.getElementById('emailMagic').value.trim();
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.origin }
+      });
+      if (error) { msgEl.textContent = "Σφάλμα: " + error.message; msgEl.className="footer err"; }
+      else { msgEl.textContent = "Σου στείλαμε link στο email."; msgEl.className="footer ok"; }
+    });
 
-    // ------- FORGOT / RESET EMAIL -------
-    const sendResetBtn = document.getElementById('sendResetBtn')
-    const forgotErr = document.getElementById('forgotErr')
-    const forgotInfo = document.getElementById('forgotInfo')
-    sendResetBtn.addEventListener('click', async (e)=>{
-      e.preventDefault()
-      forgotErr.classList.add('hidden'); forgotErr.textContent=''
-      forgotInfo.textContent=''
-      const email = document.getElementById('fp-email').value.trim()
-      if(!email){ forgotErr.textContent='Βάλε το email σου.'; forgotErr.classList.remove('hidden'); return }
+    // Email/Password login
+    document.getElementById('loginBtn')?.addEventListener('click', async () => {
+      const email = document.getElementById('emailLogin').value.trim();
+      const pass  = document.getElementById('passwordLogin').value.trim();
+      const { error } = await supabase.auth.signInWithPassword({ email, password:pass });
+      if (error) alert("Σφάλμα: " + error.message);
+      else updateStatus();
+    });
+
+    // Signup (όπως το είχες: χρησιμοποιεί τα ίδια πεδία)
+    document.getElementById('signupBtn')?.addEventListener('click', async () => {
+      const email = document.getElementById('emailLogin').value.trim();
+      const pass  = document.getElementById('passwordLogin').value.trim();
+      const { error } = await supabase.auth.signUp({
+        email, password:pass,
+        options: { emailRedirectTo: window.location.origin }
+      });
+      if (error) alert("Σφάλμα: " + error.message);
+      else alert("Έγινε εγγραφή, έλεγξε το email σου.");
+    });
+
+    // --------------------------
+    // ΜΟΝΟ αυτό προστέθηκε/διορθώθηκε
+    // --------------------------
+    const forgotLink = document.getElementById('forgotLink');
+    const forgotMsg  = document.getElementById('forgotMsg');
+
+    forgotLink.addEventListener('click', async (e) => {
+      e.preventDefault();
+      forgotMsg.textContent = '';
+      // Παίρνουμε email από το πεδίο login· αν είναι κενό, δοκίμασε του Magic
+      const emailLogin = document.getElementById('emailLogin').value.trim();
+      const fallback   = document.getElementById('emailMagic').value.trim();
+      const email = emailLogin || fallback;
+      if (!email) {
+        forgotMsg.textContent = 'Βάλε email στο πεδίο και ξαναπροσπάθησε.';
+        forgotMsg.className = 'footer err';
+        return;
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: 'https://members.problemsolver.gr/reset.html'
-      })
-      if(error){ forgotErr.textContent='Σφάλμα: '+error.message; forgotErr.classList.remove('hidden'); return }
-      forgotInfo.textContent = 'Αν υπάρχει αυτός ο λογαριασμός, στάλθηκε email με σύνδεσμο επαναφοράς.'
-    })
+      });
 
-    // Αν είμαστε ήδη logged-in, πήγαινε κατευθείαν
-    const { data:{ session } } = await supabase.auth.getSession()
-    if(session?.user) window.location.href='/dashboard.html'
+      if (error) {
+        forgotMsg.textContent = 'Σφάλμα: ' + error.message; // π.χ. Invalid API key αν το key δεν είναι σωστό
+        forgotMsg.className = 'footer err';
+      } else {
+        forgotMsg.textContent = 'Στάλθηκε σύνδεσμος επαναφοράς (αν υπάρχει ο λογαριασμός).';
+        forgotMsg.className = 'footer ok';
+      }
+    });
+    // --------------------------
+
+    updateStatus();
+    supabase.auth.onAuthStateChange(updateStatus);
   </script>
 </body>
 </html>
