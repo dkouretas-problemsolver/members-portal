@@ -48,10 +48,7 @@
     <!-- Google -->
     <div class="row" style="justify-content:center">
       <button id="googleBtn" class="btn ghost" type="button" aria-label="Σύνδεση με Google">
-        <span style="display:inline-flex;align-items:center;gap:8px;">
-          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3A12.9 12.9 0 0 1 24 36.5 12.5 12.5 0 1 1 24 11c3.2 0 6.1 1.2 8.3 3.2l5.7-5.7C34.3 4.6 29.4 2.5 24 2.5 16 2.5 8.9 7 6.3 14.7z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8A12.5 12.5 0 0 1 24 11c3.2 0 6.1 1.2 8.3 3.2l5.7-5.7C34.3 4.6 29.4 2.5 24 2.5 16 2.5 8.9 7 6.3 14.7z"/><path fill="#4CAF50" d="M24 45.5c5.3 0 10.1-1.8 13.8-4.9l-6.4-5.2A12.7 12.7 0 0 1 24 36.5c-5.1 0-9.5-3.2-11.2-7.7l-6.5 5C12 38.4 17.6 41.5 24 41.5c7.8 0 14.8-5.5 16.5-13 .4-1.3 .6-2.6 .6-4z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.3 3.7-4.6 6.4-8.3 6.5-5.1 0-9.5-3.2-11.2-7.7l-6.5 5C12 38.4 17.6 41.5 24 41.5c7.8 0 14.8-5.5 16.5-13 .4-1.3 .6-2.6 .6-4z"/></svg>
-          Σύνδεση με Google
-        </span>
+        <span style="display:inline-flex;align-items:center;gap:8px;">Σύνδεση με Google</span>
       </button>
     </div>
 
@@ -88,221 +85,77 @@
       </div>
     </div>
 
-    <!-- Panel: Forgot Password -->
+    <!-- Forgot Password -->
     <div id="forgotPanel">
-      <h3 style="margin:0 0 8px; font-size:16px;">Επαναφορά κωδικού</h3>
+      <h3>Επαναφορά κωδικού</h3>
       <label>Email</label>
-      <input id="forgotEmailInput" type="email" placeholder="you@example.com" autocomplete="email" />
+      <input id="forgotEmailInput" type="email" placeholder="you@example.com" />
       <div class="row">
         <button id="forgotBtn" class="btn" type="button">Στείλε σύνδεσμο επαναφοράς</button>
         <button id="forgotCloseBtn" class="btn ghost" type="button">Κλείσιμο</button>
       </div>
-      <div class="muted" style="margin-top:8px;">Αν υπάρχει λογαριασμός με αυτό το email, θα λάβεις οδηγίες.</div>
       <div id="forgotMsg" class="msg"></div>
     </div>
 
-    <!-- Panel: Recovery -->
+    <!-- Recovery -->
     <div id="recoveryPanel">
       <h3>Ορισμός νέου κωδικού</h3>
-      <label>Νέος κωδικός</label>
-      <input id="newPasswordInput" type="password" placeholder="Νέος κωδικός" autocomplete="new-password" />
+      <input id="newPasswordInput" type="password" placeholder="Νέος κωδικός" />
       <div class="row">
         <button id="setNewPassBtn" class="btn" type="button">Αποθήκευση</button>
       </div>
       <div id="recoveryMsg" class="msg"></div>
     </div>
-
   </div>
 
 <script>
-  // ---- Supabase init ----
-  const url = document.body.dataset.supabaseUrl;
-  const key = document.body.dataset.supabaseKey;
-  const supabase = window.supabase.createClient(url, key);
+  const supabase = window.supabase.createClient(
+    document.body.dataset.supabaseUrl,
+    document.body.dataset.supabaseKey
+  );
 
-  // ---- Helpers ----
-  function showMsg(el, text, ok=false){
-    el.textContent = text;
-    el.classList.remove('ok','err');
-    el.classList.add(ok ? 'ok' : 'err');
-    el.style.display = 'block';
-  }
-  function clearMsg(el){ el.style.display='none'; el.textContent=''; }
+  // helper
+  function showMsg(el, text, ok=false){ el.textContent=text; el.className='msg '+(ok?'ok':'err'); el.style.display='block'; }
+  function clearMsg(el){ el.style.display='none'; }
 
-  // Redirect μετά το login
-  const goHome = () => {
-    const home = window.location.origin + '/dashboard'; // άλλαξέ το αν θες
-    window.location.replace(home);
-  };
+  const emailInput=document.getElementById('emailInput');
+  const passwordInput=document.getElementById('passwordInput');
+  const loginBtn=document.getElementById('loginBtn');
+  const signupBtn=document.getElementById('signupBtn');
+  const leftMsg=document.getElementById('leftMsg');
 
-  // Καθάρισμα URL από code/state/type
-  function cleanAuthParams() {
-    const u = new URL(window.location.href);
-    ['code','state','type'].forEach(k => u.searchParams.delete(k));
-    if (u.hash) u.hash = '';
-    window.history.replaceState({}, document.title, u.toString());
-  }
+  const magicEmailInput=document.getElementById('magicEmailInput');
+  const magicBtn=document.getElementById('magicBtn');
+  const rightMsg=document.getElementById('rightMsg');
 
-  // ---- Elements ----
-  const emailInput = document.getElementById('emailInput');
-  const passwordInput = document.getElementById('passwordInput');
-  const loginBtn = document.getElementById('loginBtn');
-  const signupBtn = document.getElementById('signupBtn');
-  const leftMsg = document.getElementById('leftMsg');
+  const googleBtn=document.getElementById('googleBtn');
 
-  const magicEmailInput = document.getElementById('magicEmailInput');
-  const magicBtn = document.getElementById('magicBtn');
-  const rightMsg = document.getElementById('rightMsg');
+  const forgotLink=document.getElementById('forgotLink');
+  const forgotPanel=document.getElementById('forgotPanel');
+  const forgotEmailInput=document.getElementById('forgotEmailInput');
+  const forgotBtn=document.getElementById('forgotBtn');
+  const forgotCloseBtn=document.getElementById('forgotCloseBtn');
+  const forgotMsg=document.getElementById('forgotMsg');
 
-  const googleBtn = document.getElementById('googleBtn');
+  const recoveryPanel=document.getElementById('recoveryPanel');
+  const newPasswordInput=document.getElementById('newPasswordInput');
+  const setNewPassBtn=document.getElementById('setNewPassBtn');
+  const recoveryMsg=document.getElementById('recoveryMsg');
 
-  const forgotLink = document.getElementById('forgotLink');
-  const forgotPanel = document.getElementById('forgotPanel');
-  const forgotEmailInput = document.getElementById('forgotEmailInput');
-  const forgotBtn = document.getElementById('forgotBtn');
-  const forgotCloseBtn = document.getElementById('forgotCloseBtn');
-  const forgotMsg = document.getElementById('forgotMsg');
+  const goHome=()=>window.location.replace(window.location.origin+'/dashboard');
+  const cleanParams=()=>{const u=new URL(location);['code','state','type'].forEach(k=>u.searchParams.delete(k));history.replaceState({},'',u);};
 
-  const recoveryPanel = document.getElementById('recoveryPanel');
-  const newPasswordInput = document.getElementById('newPasswordInput');
-  const setNewPassBtn = document.getElementById('setNewPassBtn');
-  const recoveryMsg = document.getElementById('recoveryMsg');
+  loginBtn.onclick=async()=>{clearMsg(leftMsg);const {error}=await supabase.auth.signInWithPassword({email:emailInput.value,password:passwordInput.value});if(error)return showMsg(leftMsg,error.message);goHome();};
+  signupBtn.onclick=async()=>{clearMsg(leftMsg);const {error}=await supabase.auth.signUp({email:emailInput.value,password:passwordInput.value,options:{emailRedirectTo:location.origin+location.pathname}});if(error)return showMsg(leftMsg,error.message);showMsg(leftMsg,'Σου στείλαμε email επιβεβαίωσης.',true);};
+  magicBtn.onclick=async()=>{clearMsg(rightMsg);const {error}=await supabase.auth.signInWithOtp({email:magicEmailInput.value,options:{emailRedirectTo:location.origin+location.pathname}});if(error)return showMsg(rightMsg,error.message);showMsg(rightMsg,'Σου στείλαμε σύνδεσμο στο email.',true);};
+  googleBtn.onclick=()=>supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});
+  forgotLink.onclick=e=>{e.preventDefault();forgotPanel.style.display='block';};
+  forgotCloseBtn.onclick=()=>{forgotPanel.style.display='none';};
+  forgotBtn.onclick=async()=>{clearMsg(forgotMsg);const {error}=await supabase.auth.resetPasswordForEmail(forgotEmailInput.value,{redirectTo:location.origin+location.pathname});if(error)return showMsg(forgotMsg,error.message);showMsg(forgotMsg,'Έλεγξε το email σου.',true);};
 
-  // ---- Login / Signup ----
-  loginBtn.addEventListener('click', async () => {
-    clearMsg(leftMsg);
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-    if(!email || !password) return showMsg(leftMsg, 'Συμπλήρωσε email και κωδικό.');
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if(error) return showMsg(leftMsg, error.message || 'Αποτυχία σύνδεσης.');
-    showMsg(leftMsg, 'Συνδέθηκες επιτυχώς!', true);
-    goHome();
-  });
+  setNewPassBtn.onclick=async()=>{clearMsg(recoveryMsg);const {error}=await supabase.auth.updateUser({password:newPasswordInput.value});if(error)return showMsg(recoveryMsg,error.message);showMsg(recoveryMsg,'Ο κωδικός άλλαξε.',true);};
 
-  signupBtn.addEventListener('click', async () => {
-    clearMsg(leftMsg);
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-    if(!email || !password) return showMsg(leftMsg, 'Συμπλήρωσε email και κωδικό για εγγραφή.');
-    const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { emailRedirectTo: window.location.origin + window.location.pathname }
-    });
-    if(error){
-      console.error('[signUp]', error);
-      return showMsg(leftMsg, error.message || 'Αποτυχία εγγραφής (email επιβεβαίωσης).');
-    }
-    showMsg(leftMsg, 'Σου στείλαμε email επιβεβαίωσης.', true);
-  });
-
-  // ---- Magic Link ----
-  magicBtn.addEventListener('click', async () => {
-    clearMsg(rightMsg);
-    const email = magicEmailInput.value.trim();
-    if(!email) return showMsg(rightMsg, 'Συμπλήρωσε email.');
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.origin + window.location.pathname }
-    });
-    if(error) return showMsg(rightMsg, error.message || 'Αποτυχία αποστολής συνδέσμου.');
-    showMsg(rightMsg, 'Σου στείλαμε σύνδεσμο σύνδεσης στο email.', true);
-  });
-
-  // ---- Google OAuth ----
-  googleBtn.addEventListener('click', async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + window.location.pathname }
-    });
-  });
-
-  // ---- Forgot Password ----
-  forgotLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    if(emailInput.value) forgotEmailInput.value = emailInput.value;
-    forgotPanel.style.display = 'block';
-    forgotEmailInput.focus();
-  });
-  forgotCloseBtn.addEventListener('click', () => {
-    forgotPanel.style.display = 'none';
-    clearMsg(forgotMsg);
-  });
-
-  forgotBtn.addEventListener('click', async () => {
-    clearMsg(forgotMsg);
-    const email = forgotEmailInput.value.trim();
-    if(!email) return showMsg(forgotMsg, 'Συμπλήρωσε email.');
-    try{
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + window.location.pathname
-      });
-      if(error){
-        console.error('[resetPasswordForEmail]', error);
-        if (error.status === 429 || /rate limit/i.test(error.message)) {
-          return showMsg(forgotMsg,'Στείλαμε ήδη πρόσφατα email. Δοκίμασε ξανά σε ~1–2 λεπτά.');
-        }
-        return showMsg(forgotMsg, error.message || 'Αποτυχία αποστολής email επαναφοράς.');
-      }
-      showMsg(forgotMsg, 'Αν υπάρχει λογαριασμός με αυτό το email, θα λάβεις οδηγίες επαναφοράς.', true);
-    }catch(err){
-      console.error('[resetPasswordForEmail:catch]', err);
-      showMsg(forgotMsg, 'Σφάλμα αποστολής email επαναφοράς. Έλεγξε τα Auth settings του Supabase.');
-    }
-  });
-
-  // ---- Handle auth return (PKCE code) ----
-  (async function handleReturn() {
-    const search = new URLSearchParams(window.location.search);
-    const hash = new URLSearchParams(window.location.hash.replace('#',''));
-    const code = search.get('code');
-    const typeQ = search.get('type');
-    const typeH = hash.get('type');
-    const isRecovery = (typeQ === 'recovery' || typeH === 'recovery');
-
-    try {
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession({ code });
-        if (error) {
-          console.error('[exchangeCodeForSession]', error);
-          cleanAuthParams();
-          return;
-        }
-        cleanAuthParams();
-        if (isRecovery) {
-          recoveryPanel.style.display = 'block';
-          newPasswordInput.focus();
-          return;
-        }
-        goHome();
-        return;
-      }
-    } catch (e) {
-      console.error('[handleReturn catch]', e);
-    }
-
-    if (hash.get('access_token')) {
-      cleanAuthParams();
-      if (isRecovery) {
-        recoveryPanel.style.display = 'block';
-        newPasswordInput.focus();
-      } else {
-        goHome();
-      }
-    }
-  })();
-
-  // ---- Set new password after recovery (ΧΩΡΙΣ επαναδηλώσεις) ----
-  setNewPassBtn.addEventListener('click', async () => {
-    clearMsg(recoveryMsg);
-    const newPass = newPasswordInput.value;
-    if(!newPass || newPass.length < 6){
-      return showMsg(recoveryMsg, 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.');
-    }
-    const { error } = await supabase.auth.updateUser({ password: newPass });
-    if(error) return showMsg(recoveryMsg, error.message || 'Αποτυχία ενημέρωσης κωδικού.');
-    showMsg(recoveryMsg, 'Ο κωδικός άλλαξε. Μπορείς να συνδεθείς.', true);
-  });
+  (async()=>{const q=new URLSearchParams(location.search);const h=new URLSearchParams(location.hash.slice(1));const code=q.get('code');const type=q.get('type')||h.get('type');if(code){const {error}=await supabase.auth.exchangeCodeForSession({code});if(!error){cleanParams();if(type==='recovery'){recoveryPanel.style.display='block';}else{goHome();}}}})();
 </script>
 </body>
 </html>
