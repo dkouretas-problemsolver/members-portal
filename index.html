@@ -128,7 +128,12 @@
     el.style.display = 'block';
   }
   function clearMsg(el){ el.style.display='none'; el.textContent=''; }
-  const goApp = () => window.location.href = '/app'; // <-- αλλάξ' το αν θες άλλο path
+
+  // Redirect destination (φτιάξ' το αν θες άλλο):
+  const goHome = () => {
+    const home = window.location.origin + '/'; // στέλνει στην αρχική της Members
+    window.location.href = home;
+  };
 
   // ---- Elements ----
   const emailInput = document.getElementById('emailInput');
@@ -164,7 +169,7 @@
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if(error) return showMsg(leftMsg, error.message || 'Αποτυχία σύνδεσης.');
     showMsg(leftMsg, 'Συνδέθηκες επιτυχώς!', true);
-    goApp();
+    goHome();
   });
 
   signupBtn.addEventListener('click', async () => {
@@ -243,17 +248,14 @@
     const hash = new URLSearchParams(window.location.hash.replace('#',''));
     const type = hash.get('type');
 
-    // σε όλα τα cases, δένουμε το session από τα tokens του hash
     if(['signup','magiclink','recovery'].includes(type)){
       const { data, error } = await supabase.auth.getSession();
       if (!error && data?.session) {
         if (type === 'recovery') {
-          // δείξε panel αλλαγής κωδικού
           document.getElementById('recoveryPanel').style.display = 'block';
           document.getElementById('newPasswordInput').focus();
         } else {
-          // confirmed / magic sign-in -> μπες στην εφαρμογή
-          goApp();
+          goHome(); // αντί για /app
         }
       }
     }
