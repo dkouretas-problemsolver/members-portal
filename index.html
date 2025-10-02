@@ -9,6 +9,8 @@
     *{ box-sizing:border-box; }
     body{ font-family: Inter, Arial, sans-serif; margin:0; background:#fafafa; color:#111;}
     .card{ max-width: 760px; margin: 28px auto; padding: 24px; border:1px solid #eee; border-radius:16px; background:#fff; box-shadow:0 6px 24px rgba(0,0,0,.06);}
+    .logo{ display:flex; justify-content:center; margin-bottom:8px; }
+    .logo img{ height:120px; border-radius:14px; }
     h1{ text-align:center; margin: 6px 0 18px; font-size:22px; }
     .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:28px; }
     label{ display:block; font-size:14px; margin: 14px 0 6px; }
@@ -25,8 +27,6 @@
     #forgotPanel{ display:none; margin-top:16px; padding:16px; border:1px dashed #ddd; border-radius:12px; background:#fcfcfc; }
     #forgotPanel .row{ margin-top:10px; }
     #recoveryBox{ display:none; margin-top:16px; padding:16px; border:1px dashed #ddd; border-radius:12px; background:#fcfcfc; }
-    .logo{ display:flex; justify-content:center; margin-bottom:10px; }
-    .logo img{ height:64px; border-radius:12px; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -36,6 +36,7 @@
 >
   <div class="card">
     <div class="logo">
+      <!-- Το logo σου από το repo -->
       <img src="brandmark-design-1080x1080.png" alt="ProblemSolver logo">
     </div>
     <h1>ProblemSolver — Members</h1>
@@ -44,7 +45,7 @@
     <div class="row" style="justify-content:center">
       <button id="googleBtn" class="btn ghost" type="button" aria-label="Σύνδεση με Google">
         <span style="display:inline-flex;align-items:center;gap:8px;">
-          <!-- Google G icon -->
+          <!-- Επίσημο Google G -->
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
             <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.6 31.9 29.2 35 24 35c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.6 5.1 29 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 19.5-7.6 21-18v-6.5z"/>
             <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.8 16 19 13 24 13c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.6 5.1 29 3 24 3 16 3 9.1 7.6 6.3 14.7z"/>
@@ -134,6 +135,22 @@
 
   const leftMsg=$('leftMsg'), rightMsg=$('rightMsg'), globalMsg=$('globalMsg');
 
+  // -------- FIX: setSession χειροκίνητα από το URL hash (αν ο client δεν πρόλαβε) --------
+  (async ()=>{
+    if (location.hash && /access_token=/.test(location.hash)) {
+      const params = new URLSearchParams(location.hash.slice(1));
+      const access_token  = params.get('access_token');
+      const refresh_token = params.get('refresh_token');
+      if (access_token && refresh_token) {
+        await sb.auth.setSession({ access_token, refresh_token });
+        // καθάρισε το hash για να μην ξαναπαίζει
+        history.replaceState({}, '', location.pathname + location.search + '#type=recovery');
+        enterRecovery();
+      }
+    }
+  })();
+
+  // -------------------- Auth actions --------------------
   $('loginBtn').onclick = async ()=>{
     hideMsg(leftMsg);
     const email = $('emailInput').value.trim();
@@ -177,7 +194,7 @@
     hideMsg($('forgotMsg'));
     const email = $('forgotEmailInput').value.trim();
     const { error } = await sb.auth.resetPasswordForEmail(email, {
-      // Σωστό redirect χωρίς #type=recovery, ο Supabase θα βάλει μόνος του tokens
+      // καθαρό URL. ο Supabase θα προσθέσει access/refresh tokens & type=recovery
       redirectTo: location.origin + location.pathname
     });
     if (error) return showMsg($('forgotMsg'), error.message);
@@ -191,21 +208,26 @@
     hideMsg(globalMsg);
   }
 
-  // Recovery από tokens
+  // Αν υπάρχει ήδη το flag
+  if (location.hash.includes('type=recovery')) enterRecovery();
+
+  // Recovery από auth event (σε περίπτωση που ο client προλάβει μόνος του)
   sb.auth.onAuthStateChange((event) => {
     if (event === 'PASSWORD_RECOVERY') enterRecovery();
   });
 
+  // Ορισμός νέου κωδικού
   $('setNewPassBtn').onclick = async () => {
     hideMsg($('recoveryMsg'));
     const p1 = $('newPass1').value, p2 = $('newPass2').value;
-    if (!p1 || p1 !== p2) return showMsg($('recoveryMsg'),'Οι κωδικοί δεν ταιριάζουν.');
+    if (!p1 || p1 !== p2) return showMsg($('recoveryMsg'),'Οι κωδικοί δεν ταιριάξαν.');
     const { error } = await sb.auth.updateUser({ password: p1 });
     if (error) return showMsg($('recoveryMsg'),'Σφάλμα: ' + error.message);
-    showMsg($('recoveryMsg'),'Ο κωδικός άλλαξε επιτυχώς. Μπαίνεις...', true);
+    showMsg($('recoveryMsg'),'Ο κωδικός άλλαξε. Μπαίνεις...', true);
     setTimeout(goDashboard, 600);
   };
 
+  // Code flow (OAuth/Magic/Confirm)
   (async ()=>{
     const q = new URLSearchParams(location.search);
     const code = q.get('code');
@@ -217,6 +239,7 @@
     }
   })();
 
+  // Ήδη logged in;
   (async ()=>{
     const { data } = await sb.auth.getSession();
     if (data?.session && !location.hash.includes('type=recovery')) goDashboard();
