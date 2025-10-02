@@ -1,0 +1,14 @@
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+  const supabase = createClient('https://sctqieecpfsaszcuqcrv.supabase.co','<ANON_KEY>')
+
+  async function sendReset(email) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://members.problemsolver.gr/reset.html'
+    })
+    if (error) alert('Σφάλμα: ' + error.message)
+    else alert('Αν υπάρχει αυτός ο λογαριασμός, στάλθηκε email αλλαγής κωδικού.')
+  }
+
+  // π.χ. window.sendReset = () => sendReset(document.querySelector('#email').value)
+</script>
