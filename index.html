@@ -25,6 +25,8 @@
     #forgotPanel{ display:none; margin-top:16px; padding:16px; border:1px dashed #ddd; border-radius:12px; background:#fcfcfc; }
     #forgotPanel .row{ margin-top:10px; }
     #recoveryBox{ display:none; margin-top:16px; padding:16px; border:1px dashed #ddd; border-radius:12px; background:#fcfcfc; }
+    .logo{ display:flex; justify-content:center; margin-bottom:10px; }
+    .logo img{ height:64px; border-radius:12px; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -33,13 +35,16 @@
   data-supabase-key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk"
 >
   <div class="card">
+    <div class="logo">
+      <img src="brandmark-design-1080x1080.png" alt="ProblemSolver logo">
+    </div>
     <h1>ProblemSolver — Members</h1>
 
     <!-- Google -->
     <div class="row" style="justify-content:center">
       <button id="googleBtn" class="btn ghost" type="button" aria-label="Σύνδεση με Google">
         <span style="display:inline-flex;align-items:center;gap:8px;">
-          <!-- Επίσημο Google G (SVG) -->
+          <!-- Google G icon -->
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
             <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.6 31.9 29.2 35 24 35c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.6 5.1 29 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 19.5-7.6 21-18v-6.5z"/>
             <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.8 16 19 13 24 13c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.6 5.1 29 3 24 3 16 3 9.1 7.6 6.3 14.7z"/>
@@ -115,35 +120,29 @@
   </div>
 
 <script>
-  // === Supabase client (χρησιμοποιώ 'sb' για να μην συγκρούεται με το global) ===
   const sb = window.supabase.createClient(
     document.body.dataset.supabaseUrl,
     document.body.dataset.supabaseKey,
     { auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } }
   );
 
-  // === Helpers ===
   const $ = (id)=>document.getElementById(id);
   const showMsg = (el, txt, ok=false)=>{ el.textContent=txt; el.className='msg '+(ok?'ok':'err'); el.style.display='block'; };
   const hideMsg = (el)=>{ el.style.display='none'; };
   const DASHBOARD = '/dashboard.html';
   const goDashboard = ()=> location.replace(location.origin + DASHBOARD);
 
-  // === Elements ===
   const leftMsg=$('leftMsg'), rightMsg=$('rightMsg'), globalMsg=$('globalMsg');
 
-  // === Email/Password login ===
   $('loginBtn').onclick = async ()=>{
     hideMsg(leftMsg);
     const email = $('emailInput').value.trim();
     const password = $('passwordInput').value;
     const { error } = await sb.auth.signInWithPassword({ email, password });
     if (error) return showMsg(leftMsg,error.message);
-    // redirect μόνο αν ΔΕΝ είμαστε σε recovery
     if (!location.hash.includes('type=recovery')) goDashboard();
   };
 
-  // === Sign up ===
   $('signupBtn').onclick = async ()=>{
     hideMsg(leftMsg);
     const email = $('emailInput').value.trim();
@@ -156,7 +155,6 @@
     showMsg(leftMsg,'Σου στείλαμε email επιβεβαίωσης.',true);
   };
 
-  // === Magic link ===
   $('magicBtn').onclick = async ()=>{
     hideMsg(rightMsg);
     const email = $('magicEmailInput').value.trim();
@@ -168,25 +166,24 @@
     showMsg(rightMsg,'Σου στείλαμε σύνδεσμο στο email.',true);
   };
 
-  // === Google OAuth ===
   $('googleBtn').onclick = ()=> sb.auth.signInWithOAuth({
     provider:'google', options:{ redirectTo: location.origin + '/' }
   });
 
-  // === Forgot password (send reset) ===
+  // Forgot password
   $('forgotLink').onclick = (e)=>{ e.preventDefault(); $('forgotPanel').style.display='block'; $('forgotEmailInput').value = $('emailInput').value || ''; };
   $('forgotCloseBtn').onclick = ()=>{ $('forgotPanel').style.display='none'; hideMsg($('forgotMsg')); };
   $('forgotBtn').onclick = async ()=>{
     hideMsg($('forgotMsg'));
     const email = $('forgotEmailInput').value.trim();
     const { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: location.origin + location.pathname + '#type=recovery'
+      // Σωστό redirect χωρίς #type=recovery, ο Supabase θα βάλει μόνος του tokens
+      redirectTo: location.origin + location.pathname
     });
     if (error) return showMsg($('forgotMsg'), error.message);
     showMsg($('forgotMsg'), 'Έλεγξε το email σου για οδηγίες επαναφοράς.', true);
   };
 
-  // === Recovery mode (έρχεται από το email) ===
   function enterRecovery(){
     $('authGrid').style.display='none';
     $('forgotPanel').style.display='none';
@@ -194,14 +191,11 @@
     hideMsg(globalMsg);
   }
 
-  if (location.hash.includes('type=recovery')) enterRecovery();
-
-  // Όταν το Supabase πυροδοτήσει PASSWORD_RECOVERY, δείξε recovery
+  // Recovery από tokens
   sb.auth.onAuthStateChange((event) => {
     if (event === 'PASSWORD_RECOVERY') enterRecovery();
   });
 
-  // Ορισμός νέου κωδικού
   $('setNewPassBtn').onclick = async () => {
     hideMsg($('recoveryMsg'));
     const p1 = $('newPass1').value, p2 = $('newPass2').value;
@@ -212,7 +206,6 @@
     setTimeout(goDashboard, 600);
   };
 
-  // === Exchange ?code= (OAuth/Magic/Email confirm) — αλλά ΟΧΙ στο recovery ===
   (async ()=>{
     const q = new URLSearchParams(location.search);
     const code = q.get('code');
@@ -224,7 +217,6 @@
     }
   })();
 
-  // Αν ήδη υπάρχει session και δεν είμαστε σε recovery → dashboard
   (async ()=>{
     const { data } = await sb.auth.getSession();
     if (data?.session && !location.hash.includes('type=recovery')) goDashboard();
