@@ -11,6 +11,7 @@
     input { width:100%; padding:12px 14px; border:1px solid #ddd; border-radius:12px; font-size:16px; }
     button{ margin-top:12px; padding:12px 16px; border:0; border-radius:12px; font-size:16px; cursor:pointer; background:#FF6B00; color:#fff; }
     .msg { margin-top:10px; font-size:14px; color:#666; }
+    .err { color:#c00; }
   </style>
 </head>
 <body>
@@ -28,42 +29,76 @@
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // ΒΑΛΕ τα ίδια με τα άλλα αρχεία
-    const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // το δικό σου
+    const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co'
+    const SUPABASE_ANON_KEY = '<ANON_KEY>'
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
-    });
+      auth: { autoRefreshToken:true, persistSession:true, detectSessionInUrl:true }
+    })
 
-    const info = document.getElementById('info');
-    const formBox = document.getElementById('formBox');
-    const setBtn = document.getElementById('setBtn');
-    const msg = document.getElementById('msg');
+    const info = document.getElementById('info')
+    const formBox = document.getElementById('formBox')
+    const setBtn = document.getElementById('setBtn')
+    const msg = document.getElementById('msg')
 
-    // Αν φτάσαμε εδώ από το email reset, το Supabase βάζει tokens στο URL (#access_token…)
-    // Μόλις τα “δει”, θεωρεί σε session τον χρήστη και μπορούμε να αλλάξουμε password.
-    (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        info.textContent = 'Δεν βρέθηκε ενεργό reset link. Άνοιξε το link από το email ξανά.';
-        return;
+    // Parse helper: διαβάζει είτε hash (#) είτε query (?)
+    const getAllParams = () => {
+      const hashParams = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : '')
+      const queryParams = new URLSearchParams(location.search.startsWith('?') ? location.search.slice(1) : '')
+      // προτεραιότητα στο hash (Supabase default)
+      return new Map([ ...queryParams.entries(), ...hashParams.entries() ])
+    }
+
+    // 1) Τράβα session (θα “ρουφήξει” tokens από το URL αν υπάρχουν)
+    const ensureSession = async () => {
+      // Αν το URL περιέχει access_token ή code → δώσε λίγο χρόνο στο SDK
+      const params = getAllParams()
+      const hasToken = params.has('access_token') || params.has('code') || params.get('type') === 'recovery'
+      if (hasToken) {
+        // ένα μικρό await βοηθάει σε μερικούς browsers
+        await new Promise(r => setTimeout(r, 50))
       }
-      info.textContent = 'Βρέθηκε λογαριασμός ' + (session.user?.email || '');
-      formBox.style.display = 'block';
-    })();
+      return await supabase.auth.getSession()
+    }
 
+    const showForm = (email) => {
+      info.textContent = 'Βρέθηκε λογαριασμός ' + (email || '')
+      formBox.style.display = 'block'
+    }
+
+    // 2) Αρχική προσπάθεια
+    const { data: first } = await ensureSession()
+    if (first.session?.user) {
+      showForm(first.session.user.email)
+    } else {
+      // 3) Περίμενε event από το SDK (όταν διαβάσει το token)
+      info.textContent = 'Αναμονή επιβεβαίωσης συνδέσμου…'
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+          showForm(session?.user?.email)
+        }
+      })
+
+      // 4) Αν δεν βλέπουμε token καθόλου, δείξε σαφές μήνυμα
+      const params = getAllParams()
+      const noToken = !(params.has('access_token') || params.has('code') || params.get('type') === 'recovery')
+      if (noToken) {
+        info.innerHTML = '<span class="err">Δεν βρέθηκε ενεργό reset link.</span> Άνοιξε τη σελίδα από το email ανάκτησης κωδικού.'
+      }
+    }
+
+    // 5) Υποβολή νέου κωδικού
     setBtn.addEventListener('click', async () => {
-      msg.textContent = '';
-      const p1 = document.getElementById('pw1').value;
-      const p2 = document.getElementById('pw2').value;
-      if (!p1 || p1 !== p2) { msg.textContent = 'Οι κωδικοί δεν ταιριάζουν.'; return; }
+      msg.textContent = ''
+      const p1 = document.getElementById('pw1').value.trim()
+      const p2 = document.getElementById('pw2').value.trim()
+      if (!p1 || p1 !== p2) { msg.textContent = 'Οι κωδικοί δεν ταιριάζουν.'; return }
 
-      const { error } = await supabase.auth.updateUser({ password: p1 });
-      if (error) { msg.textContent = 'Σφάλμα: ' + error.message; return; }
+      const { error } = await supabase.auth.updateUser({ password: p1 })
+      if (error) { msg.textContent = 'Σφάλμα: ' + error.message; return }
 
-      msg.textContent = 'Ο κωδικός άλλαξε. Μεταφορά στο dashboard…';
-      setTimeout(() => { window.location.href = '/dashboard.html'; }, 700);
-    });
+      msg.textContent = 'Ο κωδικός άλλαξε. Μεταφορά στο dashboard…'
+      setTimeout(() => { window.location.href = '/dashboard.html' }, 700)
+    })
   </script>
 </body>
 </html>
