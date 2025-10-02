@@ -49,7 +49,7 @@
     <div class="row" style="justify-content:center">
       <button id="googleBtn" class="btn ghost" type="button" aria-label="Σύνδεση με Google">
         <span style="display:inline-flex;align-items:center;gap:8px;">
-          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3A12.9 12.9 0 0 1 24 36.5 12.5 12.5 0 1 1 24 11c3.2 0 6.1 1.2 8.3 3.2l5.7-5.7C34.3 4.6 29.4 2.5 24 2.5 16 2.5 8.9 7 6.3 14.7z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8A12.5 12.5 0 0 1 24 11c3.2 0 6.1 1.2 8.3 3.2l5.7-5.7C34.3 4.6 29.4 2.5 24 2.5 16 2.5 8.9 7 6.3 14.7z"/><path fill="#4CAF50" d="M24 45.5c5.3 0 10.1-1.8 13.8-4.9l-6.4-5.2A12.7 12.7 0 0 1 24 36.5c-5.1 0-9.5-3.2-11.2-7.7l-6.5 5C8.8 40.8 15.9 45.5 24 45.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.3 3.7-4.6 6.4-8.3 6.5-5.1 0-9.5-3.2-11.2-7.7l-6.5 5C12 38.4 17.6 41.5 24 41.5c7.8 0 14.8-5.5 16.5-13 .4-1.3 .6-2.6 .6-4z"/></svg>
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3A12.9 12.9 0 0 1 24 36.5 12.5 12.5 0 1 1 24 11c3.2 0 6.1 1.2 8.3 3.2l5.7-5.7C34.3 4.6 29.4 2.5 24 2.5 16 2.5 8.9 7 6.3 14.7z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8A12.5 12.5 0 0 1 24 11c3.2 0 6.1 1.2 8.3 3.2l5.7-5.7C34.3 4.6 29.4 2.5 24 2.5 16 2.5 8.9 7 6.3 14.7z"/><path fill="#4CAF50" d="M24 45.5c5.3 0 10.1-1.8 13.8-4.9l-6.4-5.2A12.7 12.7 0 0 1 24 36.5c-5.1 0-9.5-3.2-11.2-7.7l-6.5 5C12 38.4 17.6 41.5 24 41.5c7.8 0 14.8-5.5 16.5-13 .4-1.3 .6-2.6 .6-4z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.3 3.7-4.6 6.4-8.3 6.5-5.1 0-9.5-3.2-11.2-7.7l-6.5 5C12 38.4 17.6 41.5 24 41.5c7.8 0 14.8-5.5 16.5-13 .4-1.3 .6-2.6 .6-4z"/></svg>
           Σύνδεση με Google
         </span>
       </button>
@@ -129,11 +129,19 @@
   }
   function clearMsg(el){ el.style.display='none'; el.textContent=''; }
 
-  // Redirect destination (φτιάξ' το αν θες άλλο):
+  // Πού θα πάει ο χρήστης μετά το login
   const goHome = () => {
-    const home = window.location.origin + '/'; // στέλνει στην αρχική της Members
-    window.location.href = home;
+    const home = window.location.origin + '/dashboard'; // άλλαξέ το αν θες
+    window.location.replace(home);
   };
+
+  // Καθάρισμα URL από code/state/type
+  function cleanAuthParams() {
+    const url = new URL(window.location.href);
+    ['code','state','type'].forEach(k => url.searchParams.delete(k));
+    if (url.hash) url.hash = ''; // καθάρισε hash (π.χ. #access_token ...)
+    window.history.replaceState({}, document.title, url.toString());
+  }
 
   // ---- Elements ----
   const emailInput = document.getElementById('emailInput');
@@ -243,28 +251,54 @@
     }
   });
 
-  // ---- Handle auth links (signup / magiclink / recovery) ----
-  (async function handleAuthLinks(){
+  // ---- Handle auth return (PKCE code) ----
+  (async function handleReturn() {
+    const search = new URLSearchParams(window.location.search);
     const hash = new URLSearchParams(window.location.hash.replace('#',''));
-    const type = hash.get('type');
+    const code = search.get('code');           // PKCE (magic link, oauth, recovery)
+    const typeQ = search.get('type');          // μερικές ροές βάζουν ?type=recovery
+    const typeH = hash.get('type');            // παλιότερα ήταν στο hash
+    const isRecovery = (typeQ === 'recovery' || typeH === 'recovery');
 
-    if(['signup','magiclink','recovery'].includes(type)){
-      const { data, error } = await supabase.auth.getSession();
-      if (!error && data?.session) {
-        if (type === 'recovery') {
+    try {
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession({ code });
+        if (error) {
+          console.error('[exchangeCodeForSession]', error);
+          cleanAuthParams();
+          return; // θα μείνει στη login σελίδα
+        }
+        cleanAuthParams();
+        if (isRecovery) {
+          // Άνοιξε κατευθείαν το πάνελ ορισμού νέου κωδικού
           document.getElementById('recoveryPanel').style.display = 'block';
           document.getElementById('newPasswordInput').focus();
-        } else {
-          goHome(); // αντί για /app
+          return;
         }
+        // Κανονική σύνδεση → στο dashboard
+        goHome();
+        return;
       }
+    } catch (e) {
+      console.error('[handleReturn catch]', e);
     }
 
-    // Dev shortcut: ?testReset=1 δείχνει το panel χωρίς email
-    if (new URLSearchParams(location.search).get('testReset') === '1') {
-      document.getElementById('recoveryPanel').style.display = 'block';
+    // Back-compat: αν επέστρεψε με access_token στο hash (παλιά ροή)
+    if (hash.get('access_token')) {
+      cleanAuthParams();
+      if (isRecovery) {
+        document.getElementById('recoveryPanel').style.display = 'block';
+        document.getElementById('newPasswordInput').focus();
+      } else {
+        goHome();
+      }
     }
   })();
+
+  // ---- Set new password after recovery ----
+  const recoveryMsg = document.getElementById('recoveryMsg');
+  const newPasswordInput = document.getElementById('newPasswordInput');
+  const setNewPassBtn = document.getElementById('setNewPassBtn');
 
   setNewPassBtn.addEventListener('click', async () => {
     clearMsg(recoveryMsg);
@@ -275,7 +309,6 @@
     const { error } = await supabase.auth.updateUser({ password: newPass });
     if(error) return showMsg(recoveryMsg, error.message || 'Αποτυχία ενημέρωσης κωδικού.');
     showMsg(recoveryMsg, 'Ο κωδικός άλλαξε. Μπορείς να συνδεθείς.', true);
-    window.location.hash = '';
   });
 </script>
 </body>
