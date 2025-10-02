@@ -28,7 +28,7 @@
     .forgot a{ color:#0b57d0; text-decoration:none; }
     .forgot a:hover{ text-decoration:underline; }
     .hr{ border-top:1px solid #eee; margin:20px 0; }
-    /* Recovery panel (δεύτερο βήμα) */
+    #forgotPanel{ display:none; margin-top:16px; padding:16px; border:1px dashed #ddd; border-radius:12px; background:#fcfcfc; }
     #recoveryPanel{ display:none; margin-top:16px; padding:16px; border:1px dashed #ddd; border-radius:12px; background:#fcfcfc; }
     #recoveryPanel h3{ margin:0 0 8px; font-size:16px; }
   </style>
@@ -40,7 +40,8 @@
 >
   <div class="card">
     <div class="topbar">
-      <img src="/logo.svg" alt="ProblemSolver" style="height:28px" />
+      <img src="./logo.svg" alt="ProblemSolver" style="height:28px"
+           onerror="this.replaceWith(Object.assign(document.createElement('div'),{id:'psTextLogo',innerHTML:'Problem<span style=&quot;color:#FF6B00&quot;>Solver</span>',style:'font-weight:700;font-size:20px;letter-spacing:.2px'}))">
     </div>
     <h1>ProblemSolver – Members</h1>
 
@@ -87,8 +88,8 @@
       </div>
     </div>
 
-    <!-- Panel: Forgot Password (αυτό ΔΕΝ χαλάει την φόρμα) -->
-    <div id="forgotPanel" style="display:none; margin-top:18px; padding:16px; border:1px dashed #ddd; border-radius:12px; background:#fcfcfc;">
+    <!-- Panel: Forgot Password -->
+    <div id="forgotPanel">
       <h3 style="margin:0 0 8px; font-size:16px;">Επαναφορά κωδικού</h3>
       <label>Email</label>
       <input id="forgotEmailInput" type="email" placeholder="you@example.com" autocomplete="email" />
@@ -100,7 +101,7 @@
       <div id="forgotMsg" class="msg"></div>
     </div>
 
-    <!-- Panel: Recovery (2ο βήμα όταν ανοίγει το magic link reset) -->
+    <!-- Panel: Recovery (2ο βήμα με το link από email) -->
     <div id="recoveryPanel">
       <h3>Ορισμός νέου κωδικού</h3>
       <label>Νέος κωδικός</label>
@@ -162,7 +163,6 @@
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if(error) return showMsg(leftMsg, error.message || 'Αποτυχία σύνδεσης.');
     showMsg(leftMsg, 'Συνδέθηκες επιτυχώς!', true);
-    // redirect αν θέλεις:
     // window.location.href = '/app';
   });
 
@@ -197,7 +197,6 @@
   // ---- Forgot Password (Reset) ----
   forgotLink.addEventListener('click', (e) => {
     e.preventDefault();
-    // προ-συμπλήρωση email από αριστερό πεδίο αν υπάρχει
     if(emailInput.value) forgotEmailInput.value = emailInput.value;
     forgotPanel.style.display = 'block';
     forgotEmailInput.focus();
@@ -211,36 +210,37 @@
     clearMsg(forgotMsg);
     const email = forgotEmailInput.value.trim();
     if(!email) return showMsg(forgotMsg, 'Συμπλήρωσε email.');
+
     try{
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin + window.location.pathname
       });
       if(error){
-        // Φιλικός χειρισμός rate limit
-        if(error.status === 429 || /rate limit/i.test(error.message)){
-          return showMsg(forgotMsg,
-            'Έχεις ζητήσει πολλές επαναφορές. Δοκίμασε ξανά σε λίγα λεπτά.',
-            false
-          );
+        console.error('[resetPasswordForEmail]', error); // Δείχνει το πραγματικό cause στα DevTools
+        if (error.status === 429 || /rate limit/i.test(error.message)) {
+          return showMsg(forgotMsg,'Στείλαμε ήδη πρόσφατα email. Δοκίμασε ξανά σε ~1–2 λεπτά.');
         }
         return showMsg(forgotMsg, error.message || 'Αποτυχία αποστολής email επαναφοράς.');
       }
       showMsg(forgotMsg, 'Αν υπάρχει λογαριασμός με αυτό το email, θα λάβεις οδηγίες επαναφοράς.', true);
     }catch(err){
-      showMsg(forgotMsg, 'Κάτι πήγε στραβά. Προσπάθησε ξανά.');
+      console.error('[resetPasswordForEmail:catch]', err);
+      showMsg(forgotMsg, 'Σφάλμα αποστολής email επαναφοράς. Έλεγξε τα Auth settings του Supabase.');
     }
   });
 
-  // ---- Recovery step (όταν ανοίγει το magic link από το email reset) ----
+  // ---- Recovery step (όταν ανοίγει το reset link) ----
   (async function handleRecovery(){
-    // Supabase v2: όταν επιστρέφει από recovery, στο URL hash υπάρχει access_token και type=recovery
     const hash = new URLSearchParams(window.location.hash.replace('#',''));
     const type = hash.get('type');
     if(type === 'recovery'){
-      // ολοκληρώνουμε τη συνεδρία για να επιτρέπεται το updateUser
-      await supabase.auth.getSession(); // θα δέσει το session από τα tokens του hash
+      await supabase.auth.getSession(); // δένει το session από το hash
       recoveryPanel.style.display = 'block';
       newPasswordInput.focus();
+    }
+    // Dev-shortcut για UI test χωρίς email: ?testReset=1
+    if (new URLSearchParams(location.search).get('testReset') === '1') {
+      recoveryPanel.style.display = 'block';
     }
   })();
 
@@ -253,7 +253,6 @@
     const { error } = await supabase.auth.updateUser({ password: newPass });
     if(error) return showMsg(recoveryMsg, error.message || 'Αποτυχία ενημέρωσης κωδικού.');
     showMsg(recoveryMsg, 'Ο κωδικός άλλαξε. Μπορείς να συνδεθείς.', true);
-    // καθάρισμα hash για να μη ξαναφαίνεται το panel σε refresh
     window.location.hash = '';
   });
 </script>
