@@ -3,189 +3,231 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ProblemSolver – Members</title>
+  <title>ProblemSolver — Members</title>
   <style>
-    :root { --brand:#FF6B00; --muted:#777; }
+    :root { --brand:#FF6B00; --gray:#666; --border:#eee; }
     *{ box-sizing:border-box; }
-    body{ font-family: Inter, Arial, sans-serif; margin:0; background:#fafafa; color:#111;}
-    .card{ max-width: 760px; margin: 28px auto; padding: 24px; border:1px solid #eee; border-radius:16px; background:#fff; box-shadow:0 6px 24px rgba(0,0,0,.06);}
-    .top{display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom:4px;}
-    .top img{ height:30px; }
-    h1{ text-align:center; margin: 6px 0 18px; font-size:22px; }
-    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:28px; }
-    label{ display:block; font-size:14px; margin: 14px 0 6px; }
-    input[type="email"], input[type="password"]{ width:100%; padding:12px 14px; border:1px solid #ddd; border-radius:12px; font-size:16px; }
-    button{ border:0; border-radius:12px; padding:12px 16px; font-size:15px; cursor:pointer; }
-    .btn{ background:var(--brand); color:#fff; }
-    .btn.ghost{ background:#f5f5f5; color:#111; }
-    .muted{ color:var(--muted); font-size:12px; }
-    .row{ display:flex; gap:10px; align-items:center; margin-top:12px; }
-    .msg{ margin-top:12px; padding:10px 12px; border-radius:10px; display:none; font-size:14px; }
-    .msg.ok{ background:#ecfff2; color:#145a2a; border:1px solid #baf0c8; }
-    .msg.err{ background:#fff1f1; color:#7d1a1a; border:1px solid #f0bcbc; }
-    .hr{ border-top:1px solid #eee; margin:20px 0; }
+    body { font-family: Inter, Arial, sans-serif; margin: 0; padding: 32px; background:#fafafa; color:#111; }
+    .wrap { max-width: 880px; margin: 0 auto; }
+    .card { padding: 22px; border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,.06); background:#fff; }
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    .subtitle{ color:var(--gray); margin:0 0 16px; }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    label { display:block; font-size:14px; margin: 14px 0 6px; }
+    input[type="email"], input[type="password"]{
+      width:100%; padding:12px 14px; border:1px solid #ddd; border-radius:12px; font-size:16px;
+    }
+    button{
+      appearance:none; border:0; border-radius:12px; padding:12px 16px; cursor:pointer; font-size:15px; font-weight:600;
+    }
+    .btn{ background:#f2f2f2; }
+    .btn.primary{ background:var(--brand); color:#fff; }
+    .btn.block{ width:100%; display:flex; align-items:center; justify-content:center; gap:10px; }
+    .btn.google{
+      background:#fff; border:1px solid #ddd; font-weight:600;
+    }
+    .row{ display:flex; gap:12px; margin-top:14px; align-items:center; }
+    .muted{ color:#777; font-size:12px; margin-top:8px; }
+    .link{ color:#0b57d0; text-decoration:none; font-size:13px; }
+    .top-space{ height:12px; }
+    .divider{ height:1px; background:#f0f0f0; margin:24px 0; }
+    .center{ text-align:center; }
+    .hide{ display:none !important; }
 
-    /* Forgot panel */
-    #forgotPanel{ display:none; margin-top:16px; padding:16px; border:1px dashed #ddd; border-radius:12px; background:#fcfcfc; }
-    #forgotPanel .row{ margin-top:10px; }
+    /* Modal */
+    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; padding:20px; }
+    .modal{ width:100%; max-width:460px; background:#fff; border-radius:16px; padding:20px; box-shadow:0 10px 40px rgba(0,0,0,.18); }
+    .modal h3{ margin:0 0 6px; }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body
-  data-supabase-url="https://sctqieecpfsaszcuqcrv.supabase.co"
-  data-supabase-key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk"
->
-  <div class="card">
-    <div class="top">
-      <img src="/logo.png" alt="ProblemSolver"
-           onerror="this.replaceWith(Object.assign(document.createElement('div'),{innerHTML:'<b>Problem</b><span style=`color:#FF6B00;font-weight:700`>Solver</span>',style:'font-size:20px;font-weight:600;letter-spacing:.2px'}))">
-    </div>
-    <h1>ProblemSolver – Members</h1>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>ProblemSolver — Members</h1>
+      <p class="subtitle">Συνδέσου για να μπεις στο dashboard.</p>
 
-    <!-- Google -->
-    <div class="row" style="justify-content:center">
-      <button id="googleBtn" class="btn ghost" type="button" aria-label="Σύνδεση με Google">
-        <span style="display:inline-flex;align-items:center;gap:8px;">
-          <!-- Google G icon -->
-          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-            <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3A12.9 12.9 0 0 1 24 36.5 12.5 12.5 0 1 1 24 11c3.2 0 6.1 1.2 8.3 3.2l5.7-5.7C34.3 4.6 29.4 2.5 24 2.5 16 2.5 8.9 7 6.3 14.7z"/>
-            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8A12.5 12.5 0 0 1 24 11c3.2 0 6.1 1.2 8.3 3.2l5.7-5.7C34.3 4.6 29.4 2.5 24 2.5 16 2.5 8.9 7 6.3 14.7z"/>
-            <path fill="#4CAF50" d="M24 45.5c5.3 0 10.1-1.8 13.8-4.9l-6.4-5.2A12.7 12.7 0 0 1 24 36.5c-5.1 0-9.5-3.2-11.2-7.7l-6.5 5C12 38.4 17.6 41.5 24 41.5c7.8 0 14.8-5.5 16.5-13 .4-1.3 .6-2.6 .6-4z"/>
-            <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.3 3.7-4.6 6.4-8.3 6.5-5.1 0-9.5-3.2-11.2-7.7l-6.5 5C12 38.4 17.6 41.5 24 41.5c7.8 0 14.8-5.5 16.5-13 .4-1.3 .6-2.6 .6-4z"/>
-          </svg>
-          Σύνδεση με Google
-        </span>
+      <!-- Google Sign-in -->
+      <div class="top-space"></div>
+      <button id="googleBtn" class="btn block google" type="button" aria-label="Σύνδεση με Google">
+        <!-- Official Google 'G' SVG -->
+        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.6 31.9 29.2 35 24 35c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.6 5.1 29 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 19.5-7.6 21-18v-6.5z"/>
+          <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.8 16 19 13 24 13c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.6 5.1 29 3 24 3 16 3 9.1 7.6 6.3 14.7z"/>
+          <path fill="#4CAF50" d="M24 45c5 0 9.6-1.9 13-5.1l-6-4.9C29 36.6 26.7 37.5 24 37.5c-5.2 0-9.6-3.1-11.4-7.5l-6.6 5.1C8.9 41.1 15.9 45 24 45z"/>
+          <path fill="#1976D2" d="M45 24c0-1.3-.1-2.6-.4-3.8H24v8h11.3c-.9 4.1-4.7 7.1-9.3 7.1-2.3 0-4.4-.8-6.1-2.1l-6.6 5.1C15.9 41.1 20 43 24 43c10.5 0 19.5-7.6 21-18z"/>
+        </svg>
+        Σύνδεση με Google
       </button>
-    </div>
 
-    <div class="hr"></div>
+      <div class="divider"></div>
 
-    <div class="grid">
-      <!-- Αριστερά: Email/Password -->
-      <div>
-        <h3 style="margin:0 0 6px; font-size:16px;">Σύνδεση με Κωδικό</h3>
-        <label>Email</label>
-        <input id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" />
-        <label>Κωδικός</label>
-        <input id="passwordInput" type="password" placeholder="••••••••" autocomplete="current-password" />
+      <div class="grid" id="authGrid">
+        <!-- Login with password -->
+        <div>
+          <h3>Σύνδεση με Κωδικό</h3>
+          <label>Email</label>
+          <input id="emailLogin" type="email" placeholder="you@example.com" autocomplete="username" />
+          <label>Κωδικός</label>
+          <input id="passwordLogin" type="password" placeholder="••••••••" autocomplete="current-password" />
+
+          <div class="row">
+            <button id="loginBtn" class="btn primary">Σύνδεση</button>
+            <button id="signupBtn" class="btn">Δημιουργία Λογαριασμού</button>
+          </div>
+          <div class="muted"><a id="forgotLink" href="#" class="link">Ξέχασα τον κωδικό</a></div>
+        </div>
+
+        <!-- Magic Link -->
+        <div>
+          <h3>Σύνδεση με Magic Link</h3>
+          <label>Email</label>
+          <input id="emailMagic" type="email" placeholder="you@example.com" />
+          <div class="row">
+            <button id="magicBtn" class="btn primary">Στείλε μου Magic Link</button>
+          </div>
+          <p class="muted">Θα λάβεις email με σύνδεσμο μίας χρήσης.</p>
+        </div>
+      </div>
+
+      <!-- Password Reset (shown only in recovery) -->
+      <div id="recoveryBox" class="hide">
+        <h3>Ορισμός νέου κωδικού</h3>
+        <label>Νέος κωδικός</label>
+        <input id="newPass1" type="password" placeholder="••••••••" autocomplete="new-password" />
+        <label>Επιβεβαίωση νέου κωδικού</label>
+        <input id="newPass2" type="password" placeholder="••••••••" autocomplete="new-password" />
         <div class="row">
-          <button id="loginBtn" class="btn" type="button">Σύνδεση</button>
-          <button id="signupBtn" class="btn ghost" type="button">Δημιουργία Λογαριασμού</button>
+          <button id="setNewPassBtn" class="btn primary">Αποθήκευση &amp; Είσοδος</button>
+          <a href="/" class="link">Άκυρο</a>
         </div>
-        <div class="row" style="margin-top:8px;">
-          <a id="forgotLink" href="#" style="font-size:13px;color:#0b57d0;text-decoration:none;">Ξέχασα τον κωδικό</a>
-        </div>
-        <div id="leftMsg" class="msg"></div>
+        <p class="muted">Μετά την αποθήκευση θα μεταφερθείς στο dashboard.</p>
       </div>
 
-      <!-- Δεξιά: Magic Link -->
-      <div>
-        <h3 style="margin:0 0 6px; font-size:16px;">Σύνδεση με Magic Link</h3>
-        <label>Email</label>
-        <input id="magicEmailInput" type="email" placeholder="you@example.com" autocomplete="email" />
-        <div class="row">
-          <button id="magicBtn" class="btn" type="button">Στείλε μου Magic Link</button>
-        </div>
-        <div class="muted" style="margin-top:8px;">Θα λάβεις email με σύνδεσμο μίας χρήσης.</div>
-        <div id="rightMsg" class="msg"></div>
-      </div>
+      <p id="msg" class="muted"></p>
     </div>
-
-    <!-- Forgot Password Panel -->
-    <div id="forgotPanel">
-      <h3 style="margin:0 0 8px;">Επαναφορά κωδικού</h3>
-      <label>Email</label>
-      <input id="forgotEmailInput" type="email" placeholder="you@example.com" autocomplete="email" />
-      <div class="row">
-        <button id="forgotBtn" class="btn" type="button">Στείλε σύνδεσμο επαναφοράς</button>
-        <button id="forgotCloseBtn" class="btn ghost" type="button">Κλείσιμο</button>
-      </div>
-      <div class="muted" style="margin-top:8px;">Αν υπάρχει λογαριασμός με αυτό το email, θα λάβεις οδηγίες.</div>
-      <div id="forgotMsg" class="msg"></div>
-    </div>
-
-    <div class="hr"></div>
-    <div id="globalMsg" class="msg"></div>
   </div>
 
-<script>
-  // Supabase client
-  const supabase = window.supabase.createClient(
-    document.body.dataset.supabaseUrl,
-    document.body.dataset.supabaseKey,
-    { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }
-  );
+  <!-- Forgot modal -->
+  <div id="forgotModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="forgotTitle">
+    <div class="modal">
+      <h3 id="forgotTitle">Επαναφορά κωδικού</h3>
+      <p class="muted">Θα σου στείλουμε email με σύνδεσμο για να ορίσεις νέο κωδικό.</p>
+      <label>Email</label>
+      <input id="forgotEmail" type="email" placeholder="you@example.com" />
+      <div class="row">
+        <button id="sendForgotBtn" class="btn primary">Αποστολή</button>
+        <button id="closeForgotBtn" class="btn">Κλείσιμο</button>
+      </div>
+      <p id="forgotMsg" class="muted"></p>
+    </div>
+  </div>
 
-  // Helpers
-  const $ = (id)=>document.getElementById(id);
-  const show = (el, txt, ok=false)=>{ el.textContent=txt; el.className='msg '+(ok?'ok':'err'); el.style.display='block'; };
-  const hide = (el)=>{ el.style.display='none'; };
-  const redirectBack = location.origin + '/';                // όλα τα flows γυρίζουν εδώ
-  const goDashboard  = ()=> location.replace(location.origin + '/dashboard.html');
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // === CONFIG ===
+    const SUPABASE_URL = "https://sctqieecpfsaszcuqcrv.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk";
+    const DASHBOARD_URL = "/dashboard"; // αλλάξ' το αν χρειάζεται
 
-  // Elements
-  const emailInput=$('emailInput'), passwordInput=$('passwordInput'), leftMsg=$('leftMsg');
-  const magicEmailInput=$('magicEmailInput'), rightMsg=$('rightMsg');
-  const globalMsg=$('globalMsg');
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const $ = (id) => document.getElementById(id);
+    const show = (el) => el.classList.remove('hide');
+    const hide = (el) => el.classList.add('hide');
+    const setMsg = (t) => $('msg').textContent = t || '';
 
-  $('loginBtn').onclick = async ()=>{
-    hide(leftMsg);
-    const { error } = await supabase.auth.signInWithPassword({ email: emailInput.value, password: passwordInput.value });
-    if (error) return show(leftMsg,error.message);
-    goDashboard();
-  };
+    // === OAuth Google ===
+    $('googleBtn').onclick = async () => {
+      setMsg('');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin + DASHBOARD_URL }
+      });
+      if (error) setMsg("Σφάλμα Google: " + error.message);
+    };
 
-  $('signupBtn').onclick = async ()=>{
-    hide(leftMsg);
-    const { error } = await supabase.auth.signUp({
-      email: emailInput.value, password: passwordInput.value,
-      options: { emailRedirectTo: redirectBack }
+    // === Email/Password Login ===
+    $('loginBtn').onclick = async () => {
+      setMsg('');
+      const email = $('emailLogin').value.trim();
+      const password = $('passwordLogin').value;
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) setMsg("Σφάλμα: " + error.message);
+      // Αν πετύχει, το onAuthStateChange θα κάνει redirect
+    };
+
+    // === Sign-up (email/password) ===
+    $('signupBtn').onclick = async () => {
+      setMsg('');
+      const email = $('emailLogin').value.trim();
+      const password = $('passwordLogin').value;
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) setMsg("Σφάλμα εγγραφής: " + error.message);
+      else setMsg("Έχει σταλεί email επιβεβαίωσης.");
+    };
+
+    // === Magic Link ===
+    $('magicBtn').onclick = async () => {
+      setMsg('');
+      const email = $('emailMagic').value.trim();
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.origin + DASHBOARD_URL }
+      });
+      if (error) setMsg("Σφάλμα: " + error.message);
+      else setMsg("Σου στείλαμε Magic Link στο email.");
+    };
+
+    // === Forgot Password modal ===
+    const modal = $('forgotModal');
+    $('forgotLink').onclick = (e) => { e.preventDefault(); modal.style.display = 'flex'; $('forgotEmail').value = $('emailLogin').value.trim(); $('forgotMsg').textContent = ''; };
+    $('closeForgotBtn').onclick = () => { modal.style.display = 'none'; };
+
+    $('sendForgotBtn').onclick = async () => {
+      $('forgotMsg').textContent = '';
+      const email = $('forgotEmail').value.trim();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + window.location.pathname + '#type=recovery'
+      });
+      if (error) $('forgotMsg').textContent = "Σφάλμα: " + error.message;
+      else $('forgotMsg').textContent = "Στάλθηκε email επαναφοράς.";
+    };
+
+    // === Handle auth events / recovery ===
+    supabase.auth.onAuthStateChange((event, session) => {
+      // ΜΗΝ κάνεις redirect όταν είμαστε σε recovery
+      if (event === 'PASSWORD_RECOVERY') {
+        enterRecoveryMode();
+        return;
+      }
+      if (event === 'SIGNED_IN') {
+        // Αν δεν είμαστε σε recovery, πάμε dashboard
+        if (!window.location.hash.includes('type=recovery')) {
+          window.location.href = DASHBOARD_URL;
+        }
+      }
     });
-    if (error) return show(leftMsg,error.message);
-    show(leftMsg,'Σου στείλαμε email επιβεβαίωσης.',true);
-  };
 
-  $('magicBtn').onclick = async ()=>{
-    hide(rightMsg);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: magicEmailInput.value,
-      options: { emailRedirectTo: redirectBack }
-    });
-    if (error) return show(rightMsg,error.message);
-    show(rightMsg,'Σου στείλαμε σύνδεσμο στο email.',true);
-  };
-
-  $('googleBtn').onclick = ()=> supabase.auth.signInWithOAuth({
-    provider:'google', options:{ redirectTo: redirectBack }
-  });
-
-  // Forgot Password
-  $('forgotLink').onclick = (e)=>{ e.preventDefault(); $('forgotPanel').style.display='block'; $('forgotEmailInput').value = emailInput.value || ''; };
-  $('forgotCloseBtn').onclick = ()=>{ $('forgotPanel').style.display='none'; hide($('forgotMsg')); };
-  $('forgotBtn').onclick = async ()=>{
-    hide($('forgotMsg'));
-    const { error } = await supabase.auth.resetPasswordForEmail($('forgotEmailInput').value, { redirectTo: redirectBack });
-    if (error) return show($('forgotMsg'), error.message);
-    show($('forgotMsg'), 'Έλεγξε το email σου για οδηγίες επαναφοράς.', true);
-  };
-
-  // Αν γυρίσαμε από email/OAuth με ?code=
-  (async ()=>{
-    const q = new URLSearchParams(location.search);
-    const code = q.get('code');
-    if (code) {
-      const { error } = await supabase.auth.exchangeCodeForSession({ code });
-      if (error) return show(globalMsg,'Σφάλμα σύνδεσης. Δοκίμασε ξανά.');
-      const u=new URL(location); ['code','state','type'].forEach(k=>u.searchParams.delete(k)); history.replaceState({},'',u);
-      goDashboard();
+    // Αν ήρθαμε από το email με #type=recovery, δείξε τη φόρμα
+    if (window.location.hash.includes('type=recovery')) {
+      enterRecoveryMode();
     }
-  })();
 
-  // Αν ήδη υπάρχει session → κατευθείαν dashboard
-  (async ()=>{
-    const { data } = await supabase.auth.getSession();
-    if (data?.session) goDashboard();
-  })();
-</script>
+    function enterRecoveryMode(){
+      hide($('authGrid'));
+      show($('recoveryBox'));
+      setMsg("Βρίσκεσαι σε επαναφορά κωδικού. Όρισε νέο κωδικό.");
+    }
+
+    // Ορισμός νέου κωδικού
+    $('setNewPassBtn').onclick = async () => {
+      setMsg('');
+      const p1 = $('newPass1').value;
+      const p2 = $('newPass2').value;
+      if (!p1 || p1 !== p2) { setMsg('Οι κωδικοί δεν ταιριάζουν.'); return; }
+      const { data, error } = await supabase.auth.updateUser({ password: p1 });
+      if (error) { setMsg('Σφάλμα: ' + error.message); return; }
+      window.location.href = DASHBOARD_URL;
+    };
+  </script>
 </body>
 </html>
