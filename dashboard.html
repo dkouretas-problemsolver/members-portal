@@ -3,110 +3,262 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard – ProblemSolver</title>
+  <title>Dashboard — ProblemSolver</title>
   <style>
-    :root { --brand:#FF6B00; }
-    body{ font-family: Inter, Arial, sans-serif; margin:0; background:#f5f5f7; color:#111; }
-    .wrap{ max-width:980px; margin:32px auto; padding:0 16px; }
-    .card{ background:#fff; border:1px solid #eee; border-radius:18px; box-shadow:0 6px 24px rgba(0,0,0,.06); }
-    .head{ display:flex; align-items:center; justify-content:space-between; padding:22px 22px 0; }
-    h1{ margin:0; font-size:28px; }
-    .content{ padding:20px 22px 24px; }
-    .grid{ display:grid; gap:16px; grid-template-columns: repeat(2,minmax(0,1fr)); }
-    .box{ border:1px solid #eee; border-radius:12px; padding:14px 16px; background:#fafafa; }
-    .muted{ color:#666; font-size:13px; }
-    button{ border:0; border-radius:10px; padding:10px 14px; cursor:pointer; }
-    .btn{ background:var(--brand); color:#fff; font-weight:600; }
-    .row{ display:flex; gap:10px; align-items:center; }
-    .right{ display:flex; gap:10px; }
-    .ok{ background:#ecfff2; border:1px solid #baf0c8; color:#145a2a; padding:10px 12px; border-radius:10px; }
-    .err{ background:#fff1f1; border:1px solid #f0bcbc; color:#7d1a1a; padding:10px 12px; border-radius:10px; }
-    a.link{ color:#0b57d0; text-decoration:none; }
+    :root { --brand:#FF6B00; --muted:#6b7280; }
+    *{ box-sizing:border-box; }
+    body{ font-family: Inter, Arial, sans-serif; margin:0; background:#fafafa; color:#111; }
+    .wrap{ max-width: 1000px; margin: 28px auto; padding: 0 16px; }
+    .card{ background:#fff; border:1px solid #eee; border-radius:16px; padding:20px; box-shadow:0 6px 24px rgba(0,0,0,.06); }
+    .row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .logo{ display:flex; align-items:center; gap:12px; }
+    .logo img{ height:36px; border-radius:8px; }
+    .btn{ border:0; border-radius:10px; padding:10px 14px; background:#FF6B00; color:#fff; cursor:pointer; font-weight:600; }
+    .btn.ghost{ background:#f5f5f5; color:#111; }
+    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
+    h2{ font-size:18px; margin:0 0 10px; }
+    table{ width:100%; border-collapse:collapse; }
+    th, td{ padding:10px 8px; border-bottom:1px solid #eee; font-size:14px; text-align:left; }
+    th{ color:#374151; font-weight:700; background:#fafafa; }
+    .muted{ color:var(--muted); font-size:13px; }
+    input, textarea{ width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; font-size:14px; }
+    label{ font-size:13px; color:#374151; margin-bottom:6px; display:block; }
+    .section{ margin-top:18px; }
+    .badge{ display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+    .badge.open{ background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; }
+    .badge.answered{ background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+    .badge.closed{ background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; }
+    .msg{ margin-top:10px; padding:10px 12px; border-radius:10px; display:none; font-size:14px; }
+    .msg.ok{ background:#ecfff2; color:#145a2a; border:1px solid #baf0c8; }
+    .msg.err{ background:#fff1f1; color:#7d1a1a; border:1px solid #f0bcbc; }
+    .pill{ padding:8px 12px; background:#111; color:#fff; border-radius:999px; font-weight:700; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body
   data-supabase-url="https://sctqieecpfsaszcuqcrv.supabase.co"
   data-supabase-key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk"
 >
 <div class="wrap">
-  <div class="card">
-    <div class="head">
-      <h1>Dashboard</h1>
-      <div class="right">
-        <button id="logoutBtn">Αποσύνδεση</button>
-      </div>
-    </div>
-    <div class="content">
-      <div id="status" class="ok" style="display:none;"></div>
-      <div id="error" class="err" style="display:none;"></div>
-
-      <div class="grid" style="margin-top:8px;">
-        <div class="box">
-          <div class="muted">Email</div>
-          <div id="u_email">—</div>
-        </div>
-        <div class="box">
-          <div class="muted">User ID</div>
-          <div id="u_id" style="font-family:monospace; word-break:break-all;">—</div>
-        </div>
-        <div class="box">
-          <div class="muted">Δημιουργήθηκε</div>
-          <div id="u_created">—</div>
-        </div>
-        <div class="box">
-          <div class="muted">Τελευταία σύνδεση</div>
-          <div id="u_last">—</div>
+  <!-- Header -->
+  <div class="card" style="margin-bottom:14px;">
+    <div class="row">
+      <div class="logo">
+        <img src="brandmark-design-1080x1080.png" alt="ProblemSolver">
+        <div>
+          <div style="font-weight:800;">ProblemSolver — Dashboard</div>
+          <div class="muted" id="userEmail">…</div>
         </div>
       </div>
-
-      <div style="margin-top:18px;" class="muted">
-        Αν θέλεις, μπορείς να <a class="link" href="/">επιστρέψεις στην είσοδο</a>.
+      <div class="row" style="gap:8px;">
+        <span id="creditsPill" class="pill">Credits: …</span>
+        <button id="logoutBtn" class="btn ghost">Αποσύνδεση</button>
       </div>
     </div>
   </div>
+
+  <!-- Grid: Προφίλ + Credits / αγορές -->
+  <div class="grid">
+    <div class="card">
+      <h2>Στοιχεία προφίλ</h2>
+      <div class="muted">Ενημέρωσε τα στοιχεία τιμολόγησης & επικοινωνίας.</div>
+      <div class="section">
+        <label>Ονοματεπώνυμο</label>
+        <input id="fullName" placeholder="Πλήρες όνομα" />
+
+        <label style="margin-top:10px;">Εταιρεία</label>
+        <input id="company" placeholder="Επωνυμία" />
+
+        <label style="margin-top:10px;">ΑΦΜ / VAT</label>
+        <input id="vat" placeholder="ΑΦΜ" />
+
+        <label style="margin-top:10px;">Τηλέφωνο</label>
+        <input id="phone" placeholder="+30 ..." />
+      </div>
+      <div class="section">
+        <button id="saveProfileBtn" class="btn">Αποθήκευση</button>
+        <div id="profileMsg" class="msg"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Credits & Αγορές</h2>
+      <div class="muted">Το υπόλοιπό σου και οι πρόσφατες κινήσεις.</div>
+      <div class="section">
+        <div class="row" style="align-items:flex-end;">
+          <div>
+            <div class="muted">Διαθέσιμα credits</div>
+            <div id="creditsBalance" style="font-size:26px;font-weight:800;">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <h3 style="margin:0 0 8px;font-size:15px;">Πρόσφατες χρεώσεις</h3>
+        <table id="paymentsTable">
+          <thead><tr>
+            <th>Ημ/νία</th><th>Ποσό</th><th>Κατάσταση</th><th>Περιγραφή</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ερωτήσεις -->
+  <div class="card section">
+    <h2>Ιστορικό ερωτήσεων</h2>
+    <div class="muted">Οι τελευταίες ερωτήσεις σου και οι απαντήσεις.</div>
+    <div class="section">
+      <table id="questionsTable">
+        <thead><tr>
+          <th>Ημ/νία</th><th>Τίτλος</th><th>Κατάσταση</th><th>Απάντηση</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
 <script>
-  const supabase = window.supabase.createClient(
+  // Supabase
+  const sb = window.supabase.createClient(
     document.body.dataset.supabaseUrl,
     document.body.dataset.supabaseKey,
     { auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } }
   );
 
+  // Helpers
   const $ = (id)=>document.getElementById(id);
-  const show = (el,txt)=>{ el.textContent=txt; el.style.display='block'; };
+  const show = (el, txt, ok=false)=>{ el.textContent=txt; el.className='msg '+(ok?'ok':'err'); el.style.display='block'; };
   const hide = (el)=>{ el.style.display='none'; };
 
-  async function loadUser() {
-    const { data, error } = await supabase.auth.getUser();
+  // Auth guard
+  (async ()=>{
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return location.replace('/index.html');
+    const user = session.user;
+    $('userEmail').textContent = user.email || user.user_metadata?.email || '—';
 
-    if (error || !data?.user) {
-      // Δεν υπάρχει session -> γύρνα στην είσοδο
-      location.replace(location.origin + '/');
-      return;
-    }
+    // Load everything
+    await Promise.all([
+      loadProfile(user.id),
+      loadCredits(user.id),
+      loadPayments(user.id),
+      loadQuestions(user.id)
+    ]);
+  })();
 
-    const u = data.user;
-    $('u_email').textContent = u.email ?? '—';
-    $('u_id').textContent = u.id ?? '—';
-    $('u_created').textContent = u.created_at ? new Date(u.created_at).toLocaleString() : '—';
-    $('u_last').textContent = u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString() : '—';
-
-    show($('status'), `Καλώς ήρθες, ${u.email}!`);
-  }
-
-  $('logoutBtn').onclick = async () => {
-    await supabase.auth.signOut();
-    location.replace(location.origin + '/');
+  // Logout
+  $('logoutBtn').onclick = async ()=>{
+    await sb.auth.signOut(); location.replace('/index.html');
   };
 
-  // Αν για  οποιονδήποτε λόγο χαθεί το session, γύρνα πίσω
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (!session) location.replace(location.origin + '/');
-  });
+  // =====================
+  // Profile
+  // =====================
+  async function loadProfile(user_id){
+    const { data, error } = await sb.from('ps_profiles').select('*').eq('user_id', user_id).maybeSingle();
+    if (error) return console.error(error);
+    if (data){
+      $('fullName').value = data.full_name || '';
+      $('company').value  = data.company || '';
+      $('vat').value      = data.vat || '';
+      $('phone').value    = data.phone || '';
+    } else {
+      // ensure record exists
+      await sb.from('ps_profiles').insert({ user_id }).select().maybeSingle();
+    }
+  }
 
-  loadUser();
+  $('saveProfileBtn').onclick = async ()=>{
+    hide($('profileMsg'));
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+    const payload = {
+      user_id: session.user.id,
+      full_name: $('fullName').value.trim(),
+      company: $('company').value.trim(),
+      vat: $('vat').value.trim(),
+      phone: $('phone').value.trim(),
+    };
+    // upsert
+    const { error } = await sb.from('ps_profiles').upsert(payload, { onConflict: 'user_id' });
+    if (error) return show($('profileMsg'),'Σφάλμα αποθήκευσης: '+error.message);
+    show($('profileMsg'),'Αποθηκεύτηκε!', true);
+  };
+
+  // =====================
+  // Credits
+  // =====================
+  async function loadCredits(user_id){
+    // balance view
+    const { data: bal } = await sb.from('ps_credits_balance').select('balance').eq('user_id', user_id).maybeSingle();
+    const balance = bal?.balance ?? 0;
+    $('creditsBalance').textContent = balance;
+    $('creditsPill').textContent = 'Credits: ' + balance;
+  }
+
+  // =====================
+  // Payments
+  // =====================
+  async function loadPayments(user_id){
+    const { data, error } = await sb
+      .from('ps_payments')
+      .select('created_at, amount_cents, currency, status, description')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending:false })
+      .limit(20);
+    if (error) return console.error(error);
+
+    const tbody = $('paymentsTable').querySelector('tbody');
+    tbody.innerHTML = '';
+    (data||[]).forEach(p=>{
+      const tr = document.createElement('tr');
+      const amt = (p.amount_cents/100).toFixed(2) + ' ' + (p.currency||'EUR');
+      tr.innerHTML = `
+        <td>${new Date(p.created_at).toLocaleString()}</td>
+        <td><strong>${amt}</strong></td>
+        <td>${p.status||'-'}</td>
+        <td>${p.description||''}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // =====================
+  // Questions + Answers
+  // =====================
+  async function loadQuestions(user_id){
+    const { data, error } = await sb
+      .from('ps_questions')
+      .select('id,title,status,created_at, ps_answers(id,created_at,content)')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending:false })
+      .limit(50);
+    if (error) return console.error(error);
+
+    const tbody = $('questionsTable').querySelector('tbody');
+    tbody.innerHTML = '';
+    (data||[]).forEach(q=>{
+      const ans = (q.ps_answers && q.ps_answers.length) ? q.ps_answers[0] : null;
+      const badgeClass = q.status==='answered' ? 'answered' : (q.status==='closed' ? 'closed' : 'open');
+      const ansCell = ans ? `<a href="/answer.html?q=${q.id}" style="color:#0b57d0;text-decoration:none;">Προβολή</a>` : '<span class="muted">—</span>';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${new Date(q.created_at).toLocaleString()}</td>
+        <td>${escapeHtml(q.title||'')}</td>
+        <td><span class="badge ${badgeClass}">${q.status}</span></td>
+        <td>${ansCell}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+  }
 </script>
 </body>
 </html>
