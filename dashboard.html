@@ -8,70 +8,81 @@
   <style>
     :root{--brand:#FF6B00}
     *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui,Arial;color:#111;background:#f6f7f9}
-    .wrap{max-width:980px;margin:40px auto;padding:0 16px}
-    .card{background:#fff;border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.06);padding:24px;margin-bottom:16px}
-    h1{font-size:24px;margin:0 0 8px}
+    body{margin:0;font-family:Inter,system-ui,Arial;background:#f6f7f9;color:#111}
+    .wrap{max-width:900px;margin:40px auto;padding:0 16px}
+    .card{background:#fff;border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.06);padding:24px}
+    h1{margin:0 0 6px}
     .brand{color:var(--brand);font-weight:700}
-    .stat{font-size:40px;font-weight:700}
+    .stat{font-size:48px;font-weight:700}
     .muted{color:#666}
-    .btn{padding:8px 14px;border-radius:10px;border:1px solid #ddd;background:#fff;cursor:pointer}
-    .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+    .row{display:flex;gap:24px;align-items:center;justify-content:space-between}
+    .btn{padding:8px 12px;border:1px solid #ddd;border-radius:10px;background:#fff;cursor:pointer}
   </style>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>Καλώς ήρθες στο <span class="brand">ProblemSolver</span></h1>
-      <div class="muted" id="ps-user-email">—</div>
-      <div style="margin-top:20px;">
-        <div>Τα Credits μου:</div>
-        <div class="stat" id="ps-credits">—</div>
+      <div class="row">
+        <div>
+          <h1>Καλώς ήρθες στο <span class="brand">ProblemSolver</span></h1>
+          <div id="ps-email" class="muted">—</div>
+        </div>
+        <div>
+          <button class="btn" id="btn-refresh">Ανανέωση</button>
+          <button class="btn" id="btn-logout">Αποσύνδεση</button>
+        </div>
       </div>
-      <div style="margin-top:20px;">
-        <button class="btn" id="btn-refresh">Ανανέωση</button>
-        <button class="btn" id="btn-logout">Αποσύνδεση</button>
+
+      <div style="margin-top:24px">
+        <div class="muted">Τα Credits μου</div>
+        <div id="ps-credits" class="stat">—</div>
       </div>
+
+      <div id="ps-error" class="muted" style="margin-top:16px;color:#b00020;display:none"></div>
     </div>
   </div>
 
 <script>
-  // 👉 ΒΑΖΩ ΚΑΤΕΥΘΕΙΑΝ ΤΑ ΔΙΚΑ ΣΟΥ ΣΤΟΙΧΕΙΑ
-  const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk';
+  // ---------- Supabase (με το δικό σου URL & ANON) ----------
+  const supabase = window.supabase.createClient(
+    'https://sctqieecpfsaszcuqcrv.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk',
+    { db: { schema: 'app' } } // <— Δουλεύουμε κατευθείαν στο schema app
+  );
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const $ = (id) => document.getElementById(id);
+  const showError = (msg) => { const el=$('ps-error'); el.style.display='block'; el.textContent=msg; };
 
-  document.getElementById('btn-refresh').addEventListener('click', initDashboard);
-  document.getElementById('btn-logout').addEventListener('click', async () => {
+  document.addEventListener('DOMContentLoaded', init);
+  $('btn-refresh').addEventListener('click', init);
+  $('btn-logout').addEventListener('click', async () => {
     await supabase.auth.signOut();
     location.href = '/login.html';
   });
 
-  document.addEventListener('DOMContentLoaded', initDashboard);
+  async function init(){
+    try{
+      $('ps-error').style.display = 'none';
+      // 1) χρήστης
+      const { data: { user }, error:uerr } = await supabase.auth.getUser();
+      if (uerr) throw uerr;
+      if (!user){ location.href = '/login.html'; return; }
+      $('ps-email').textContent = user.email || '—';
 
-  async function initDashboard(){
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) throw error;
-      if (!user){
-        location.href = '/login.html';
-        return;
-      }
-      document.getElementById('ps-user-email').textContent = user.email || '—';
-
-      const { data, error: e2 } = await supabase
-        .from('app.credit_balances')
+      // 2) balance από app.credit_balances
+      const { data, error } = await supabase
+        .from('credit_balances')   // schema app έχει ήδη οριστεί
         .select('balance')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (e2) throw e2;
-      document.getElementById('ps-credits').textContent = data?.balance ?? 0;
-    } catch(e){
+      if (error) throw error;
+      $('ps-credits').textContent = (data && typeof data.balance === 'number') ? data.balance : 0;
+    }catch(e){
       console.error(e);
-      document.getElementById('ps-credits').textContent = '—';
+      $('ps-credits').textContent = '—';
+      showError(e.message || String(e));
     }
   }
 </script>
