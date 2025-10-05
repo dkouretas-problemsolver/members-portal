@@ -1,146 +1,79 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="el">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ProblemSolver — Dashboard</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ProblemSolver • Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--brand:#FF6B00}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Arial;color:#111;background:#f6f7f9}
+    .wrap{max-width:980px;margin:40px auto;padding:0 16px}
+    .card{background:#fff;border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.06);padding:24px;margin-bottom:16px}
+    h1{font-size:24px;margin:0 0 8px}
+    .brand{color:var(--brand);font-weight:700}
+    .stat{font-size:40px;font-weight:700}
+    .muted{color:#666}
+    .btn{padding:8px 14px;border-radius:10px;border:1px solid #ddd;background:#fff;cursor:pointer}
+    .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  </style>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100 font-sans">
-
-  <!-- Header -->
-  <div class="bg-white shadow flex justify-between items-center px-6 py-4">
-    <div class="text-lg font-bold">
-      ProblemSolver — Dashboard
-    </div>
-    <div class="flex items-center space-x-4">
-      <div id="user-email" class="text-gray-700"></div>
-      <div id="credits-badge" class="bg-black text-white px-4 py-2 rounded-full">Credits: 0</div>
-      <button id="logout-btn" class="text-sm text-orange-600 underline">Αποσύνδεση</button>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Καλώς ήρθες στο <span class="brand">ProblemSolver</span></h1>
+      <div class="muted" id="ps-user-email">—</div>
+      <div style="margin-top:20px;">
+        <div>Τα Credits μου:</div>
+        <div class="stat" id="ps-credits">—</div>
+      </div>
+      <div style="margin-top:20px;">
+        <button class="btn" id="btn-refresh">Ανανέωση</button>
+        <button class="btn" id="btn-logout">Αποσύνδεση</button>
+      </div>
     </div>
   </div>
 
-  <!-- Main content -->
-  <div class="max-w-6xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+<script>
+  // 👉 ΒΑΖΩ ΚΑΤΕΥΘΕΙΑΝ ΤΑ ΔΙΚΑ ΣΟΥ ΣΤΟΙΧΕΙΑ
+  const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk';
 
-    <!-- Profile -->
-    <div class="bg-white shadow rounded-lg p-6">
-      <h2 class="text-xl font-semibold mb-4">Στοιχεία προφίλ</h2>
-      <p class="text-gray-500 mb-4">Ενημέρωσε στοιχεία επικοινωνίας & τιμολόγησης.</p>
-      <form class="space-y-3">
-        <input class="w-full border p-2 rounded" placeholder="Πλήρες όνομα">
-        <input class="w-full border p-2 rounded" placeholder="Επωνυμία">
-        <input class="w-full border p-2 rounded" placeholder="ΑΦΜ / VAT">
-        <input class="w-full border p-2 rounded" placeholder="+30 ...">
-        <div class="flex items-center space-x-2">
-          <input type="checkbox"> <label>Θέλω τιμολόγιο</label>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <input class="border p-2 rounded" placeholder="Οδός & αριθμός">
-          <input class="border p-2 rounded" placeholder="Πόλη">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <input class="border p-2 rounded" placeholder="Τ.Κ.">
-          <input class="border p-2 rounded" placeholder="Χώρα">
-        </div>
-        <button type="button" class="bg-orange-500 text-white px-4 py-2 rounded">Αποθήκευση</button>
-      </form>
-    </div>
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    <!-- Credits -->
-    <div class="bg-white shadow rounded-lg p-6">
-      <h2 class="text-xl font-semibold mb-4">Credits</h2>
-      <p class="text-gray-500 mb-2">Το υπόλοιπό σου.</p>
-      <div class="text-3xl font-extrabold mb-2" id="credits-panel">0</div>
-      <small id="credits-status" class="text-gray-500"></small>
+  document.getElementById('btn-refresh').addEventListener('click', initDashboard);
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    location.href = '/login.html';
+  });
 
-      <h3 class="text-lg font-semibold mt-6">Πρόσφατες κινήσεις</h3>
-      <table class="w-full mt-2 text-sm border-t">
-        <thead class="text-left">
-          <tr>
-            <th class="py-1">Ημ/νία</th>
-            <th class="py-1">Ποσό</th>
-            <th class="py-1">Κατάσταση</th>
-            <th class="py-1">Περιγραφή</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td colspan="4" class="text-gray-400 py-4 text-center">Θα συμπληρωθούν στο επόμενο βήμα</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  document.addEventListener('DOMContentLoaded', initDashboard);
 
-  </div>
-
-  <script>
-    // === 1) Init Supabase ===
-    const supabase = window.supabase.createClient(
-      'https://sctqieecpfsaszcuqcrv.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk'
-    );
-
-    const badgeEl  = document.querySelector('#credits-badge');
-    const panelEl  = document.querySelector('#credits-panel');
-    const statusEl = document.querySelector('#credits-status');
-    const userEmailEl = document.querySelector('#user-email');
-
-    function setCredits(v){
-      const n = Number.isFinite(Number(v)) ? Number(v) : 0;
-      badgeEl.textContent = `Credits: ${n}`;
-      panelEl.textContent = n;
-    }
-    function setStatus(msg){ statusEl.textContent = msg || ''; }
-
-    (async () => {
-      try {
-        setStatus('Φόρτωση υπολοίπου…');
-
-        const { data: { user }, error: userErr } = await supabase.auth.getUser();
-        if (userErr) throw userErr;
-        if (!user) {
-          setCredits(0);
-          setStatus('Δεν υπάρχει ενεργό session.');
-          return;
-        }
-        userEmailEl.textContent = user.email;
-
-        // Προσπάθεια με user_id
-        let credits = null;
-        const { data: byId } = await supabase
-          .from('credit_balances')
-          .select('credits')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        if (byId && byId.credits != null) credits = byId.credits;
-
-        // Fallback με email
-        if (credits === null && user.email) {
-          const { data: byEmail } = await supabase
-            .from('credit_balances')
-            .select('credits')
-            .eq('email', user.email)
-            .maybeSingle();
-          if (byEmail && byEmail.credits != null) credits = byEmail.credits;
-        }
-
-        setCredits(credits ?? 0);
-        setStatus(credits == null ? 'Δεν βρέθηκε υπόλοιπο για αυτόν τον χρήστη.' : '');
-      } catch (e) {
-        console.error(e);
-        setCredits(0);
-        setStatus('Σφάλμα κατά την ανάκτηση υπολοίπου.');
+  async function initDashboard(){
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      if (!user){
+        location.href = '/login.html';
+        return;
       }
-    })();
+      document.getElementById('ps-user-email').textContent = user.email || '—';
 
-    // Logout
-    document.querySelector('#logout-btn').addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      window.location.reload();
-    });
-  </script>
+      const { data, error: e2 } = await supabase
+        .from('app.credit_balances')
+        .select('balance')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
+      if (e2) throw e2;
+      document.getElementById('ps-credits').textContent = data?.balance ?? 0;
+    } catch(e){
+      console.error(e);
+      document.getElementById('ps-credits').textContent = '—';
+    }
+  }
+</script>
 </body>
 </html>
