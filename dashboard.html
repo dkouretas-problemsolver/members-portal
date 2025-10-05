@@ -2,171 +2,147 @@
 <html lang="el">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ProblemSolver • Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
-    :root{--brand:#FF6B00}
+    :root {
+      --brand:#FF6B00; --bg:#f7f8fb; --card:#fff; --text:#111; --muted:#6b7280; --ring:#e5e7eb;
+      --radius:14px;
+    }
     *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui,Arial;background:#f6f7f9;color:#111}
-    .wrap{max-width:900px;margin:40px auto;padding:0 16px}
-    .card{background:#fff;border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.06);padding:24px}
-    h1{margin:0 0 6px}
-    .brand{color:var(--brand);font-weight:700}
-    .muted{color:#666}
-    .row{display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .btn{padding:8px 12px;border:1px solid #ddd;border-radius:10px;background:#fff;cursor:pointer}
-    .stats{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:16px;margin-top:20px}
-    .stat{background:#fafbfc;border:1px solid #eee;border-radius:12px;padding:16px}
-    .stat .label{font-size:13px;color:#666;margin-bottom:6px}
-    .stat .value{font-size:32px;font-weight:700}
-    .err{color:#b00020;margin-top:12px;display:none}
+    html,body{height:100%}
+    body{
+      margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    .wrap{max-width:1050px;margin:40px auto;padding:0 18px}
+    .header{
+      background:var(--card);border-radius:20px;padding:22px 22px 16px;border:1px solid var(--ring);
+      display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    }
+    .title{font-size:28px;font-weight:800}
+    .brand{color:var(--brand)}
+    .email{color:var(--muted);font-size:14px;margin-top:4px}
+    .btns{display:flex;gap:10px}
+    button{
+      padding:10px 14px;border-radius:12px;border:1px solid var(--ring);background:#fff;cursor:pointer;font-weight:600
+    }
+    .btn-primary{background:var(--brand);border-color:var(--brand);color:#fff}
+    .grid{
+      display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:16px
+    }
+    @media (max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:520px){.grid{grid-template-columns:1fr}}
+    .card{
+      background:var(--card);border:1px solid var(--ring);border-radius:var(--radius);
+      padding:22px 20px;display:flex;flex-direction:column;gap:8px;min-height:110px
+    }
+    .label{font-size:14px;color:var(--muted)}
+    .big{font-size:40px;font-weight:800;line-height:1}
+    .dash{font-weight:700}
+    .err{margin-top:14px;color:#b91c1c;font-size:13px}
   </style>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
-      <div class="row">
-        <div>
-          <h1>Καλώς ήρθες στο <span class="brand">ProblemSolver</span></h1>
-          <div id="ps-email" class="muted">—</div>
-        </div>
-        <div>
-          <button class="btn" id="btn-refresh">Ανανέωση</button>
-          <button class="btn" id="btn-logout">Αποσύνδεση</button>
-        </div>
+    <div class="header">
+      <div>
+        <div class="title">Καλώς ήρθες στο <span class="brand">ProblemSolver</span></div>
+        <div class="email" id="userEmail">—</div>
       </div>
-
-      <!-- ΤΕΣΣΕΡΙΣ ΔΕΙΚΤΕΣ -->
-      <div class="stats">
-        <div class="stat">
-          <div class="label">Σύνολο credits</div>
-          <div id="ps-total" class="value">—</div>
-        </div>
-        <div class="stat">
-          <div class="label">Δεσμευμένα</div>
-          <div id="ps-reserved" class="value">—</div>
-        </div>
-        <div class="stat">
-          <div class="label">Διαθέσιμα</div>
-          <div id="ps-available" class="value">—</div>
-        </div>
-        <div class="stat">
-          <div class="label">Λήξη δεσμεύσεων</div>
-          <div id="ps-expiry" class="value">—</div>
-        </div>
+      <div class="btns">
+        <button id="refreshBtn" class="btn-primary">Ανανέωση</button>
+        <button id="logoutBtn">Αποσύνδεση</button>
       </div>
-
-      <div id="ps-error" class="err"></div>
     </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="label">Σύνολο credits</div>
+        <div class="big" id="totalCredits">0</div>
+      </div>
+      <div class="card">
+        <div class="label">Δεσμευμένα</div>
+        <div class="big" id="reservedCredits">0</div>
+      </div>
+      <div class="card">
+        <div class="label">Διαθέσιμα</div>
+        <div class="big" id="availableCredits">0</div>
+      </div>
+      <div class="card">
+        <div class="label">Λήξη δεσμεύσεων</div>
+        <div class="big dash" id="reservedExpiry">—</div>
+      </div>
+    </div>
+
+    <div class="err" id="errBox" hidden></div>
   </div>
 
-<script>
-  // Supabase (δικά σου στοιχεία + schema app)
-  const supabase = window.supabase.createClient(
-    'https://sctqieecpfsaszcuqcrv.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk',
-    { db: { schema: 'app' } }
-  );
+  <!-- Supabase JS (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // 1) ΒΑΛΕ ΤΑ ΔΙΚΑ ΣΟΥ CREDENTIALS ΚΑΤΩΘΙ (ΟΧΙ service role εδώ)
+    const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';         // <- βάλε το δικό σου
+    const SUPABASE_ANON_KEY = 'ey...YOUR-ANON-KEY...';               // <- βάλε το δικό σου
+    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-  const $ = (id) => document.getElementById(id);
-  const showErr = (msg) => { const el=$('ps-error'); el.style.display='block'; el.textContent=msg; };
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  document.addEventListener('DOMContentLoaded', init);
-  $('btn-refresh').addEventListener('click', init);
-  $('btn-logout').addEventListener('click', async () => { await supabase.auth.signOut(); location.href = '/login.html'; });
+    const el = (id)=>document.getElementById(id);
+    const fmt = d => new Date(d).toLocaleString('el-GR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 
-  async function init(){
-    try{
-      $('ps-error').style.display='none';
-
-      // 1) Χρήστης
-      const { data: { user }, error:uerr } = await supabase.auth.getUser();
-      if (uerr) throw uerr;
-      if (!user){ location.href = '/login.html'; return; }
-      $('ps-email').textContent = user.email || '—';
-
-      // 2) Σύνολο credits από credit_balances
-      const total = await getTotal(user.id);
-
-      // 3) Δεσμευμένα & επόμενη λήξη (δοκιμάζει view v_reserved, αλλιώς υπολογίζει από credit_reservations)
-      const { reserved, nextExpiry } = await getReservedAndExpiry(user.id);
-
-      // 4) Διαθέσιμα
-      const available = Math.max((total ?? 0) - (reserved ?? 0), 0);
-
-      // 5) Γέμισμα UI
-      $('ps-total').textContent = isNum(total) ? total : 0;
-      $('ps-reserved').textContent = isNum(reserved) ? reserved : 0;
-      $('ps-available').textContent = available;
-      $('ps-expiry').textContent = nextExpiry ? new Date(nextExpiry).toLocaleString('el-GR') : '—';
-
-    } catch(e){
-      console.error(e);
-      showErr(e.message || String(e));
-      // fallback UI
-      $('ps-total').textContent = '—';
-      $('ps-reserved').textContent = '—';
-      $('ps-available').textContent = '—';
-      $('ps-expiry').textContent = '—';
+    async function hardRedirectToLogin(){
+      // άλλαξέ το αν έχεις συγκεκριμένο route login
+      window.location.href = '/login';
     }
-  }
 
-  function isNum(x){ return typeof x === 'number' && !Number.isNaN(x); }
+    async function loadCredits(){
+      el('errBox').hidden = true; el('errBox').textContent = '';
 
-  async function getTotal(uid){
-    const { data, error } = await supabase
-      .from('credit_balances')
-      .select('balance')
-      .eq('user_id', uid)
-      .maybeSingle();
-    if (error) throw error;
-    return data?.balance ?? 0;
-  }
+      const { data: { user }, error: uErr } = await supabase.auth.getUser();
+      if (uErr) { el('errBox').hidden=false; el('errBox').textContent='Auth error: '+uErr.message; return; }
+      if (!user) { return hardRedirectToLogin(); }
 
-  async function getReservedAndExpiry(uid){
-    // 1) Προσπάθησε view app.v_reserved (αν το έχεις διαμορφώσει)
-    try{
-      const { data, error } = await supabase
-        .from('v_reserved')
-        .select('reserved, next_expiry, user_id')
-        .eq('user_id', uid)
-        .maybeSingle();
-      if (!error && data){
-        return {
-          reserved: Number(data.reserved ?? 0),
-          nextExpiry: data.next_expiry || null
-        };
+      el('userEmail').textContent = user.email || '—';
+
+      const { data, error } = await supabase.rpc('get_my_credits');
+      if (error) {
+        el('errBox').hidden=false;
+        el('errBox').textContent = 'Σφάλμα φόρτωσης credits: ' + error.message;
+        return;
       }
-    }catch(_) { /* αγνόησε, θα πέσουμε στο fallback */ }
 
-    // 2) Fallback: υπολογισμός από app.credit_reservations
-    // Κριτήριο: ενεργές κρατήσεις = released_at IS NULL ΚΑΙ expires_at > now()
-    try{
-      const nowISO = new Date().toISOString();
-      const { data, error } = await supabase
-        .from('credit_reservations')
-        .select('amount, expires_at, released_at')
-        .eq('user_id', uid)
-        .is('released_at', null)
-        .gte('expires_at', nowISO);
-      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      const total = row?.total ?? 0;
+      const reserved = row?.reserved ?? 0;
+      const available = row?.available ?? Math.max(total - reserved, 0);
+      const nextExp = row?.next_expiration;
 
-      let sum = 0, minExp = null;
-      (data || []).forEach(r => {
-        const amt = Number(r.amount ?? 0);
-        sum += Number.isFinite(amt) ? amt : 0;
-        const exp = r.expires_at ? new Date(r.expires_at) : null;
-        if (exp && (!minExp || exp < minExp)) minExp = exp;
-      });
-
-      return { reserved: sum, nextExpiry: minExp ? minExp.toISOString() : null };
-    }catch(e){
-      // Αν δεν υπάρχει καν ο πίνακας, επέστρεψε μηδέν
-      return { reserved: 0, nextExpiry: null };
+      el('totalCredits').textContent = total;
+      el('reservedCredits').textContent = reserved;
+      el('availableCredits').textContent = available;
+      el('reservedExpiry').textContent = nextExp ? fmt(nextExp) : '—';
     }
-  }
-</script>
+
+    // Buttons
+    el('refreshBtn').addEventListener('click', loadCredits);
+    el('logoutBtn').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      hardRedirectToLogin();
+    });
+
+    // Auto-refresh όταν επιστρέφεις στο tab
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) loadCredits(); });
+
+    // Εκκίνηση
+    (async ()=>{ await loadCredits(); })();
+
+    // Προαιρετικά: αν αλλάξει η συνεδρία, ανανέωση
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) hardRedirectToLogin();
+    });
+  </script>
 </body>
 </html>
