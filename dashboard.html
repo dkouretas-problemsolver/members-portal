@@ -126,7 +126,6 @@
         </div>
       </div>
 
-      <!-- Κρατάμε χώρο για μελλοντικές κινήσεις/πληρωμές -->
       <div class="section">
         <h3 style="margin:0 0 8px;font-size:15px;">Πρόσφατες κινήσεις</h3>
         <table id="paymentsTable">
@@ -179,7 +178,7 @@
     await Promise.all([
       loadProfile(user.id),
       loadCredits(user.id),
-      loadPayments(user.id),   // placeholder (μένει κενό αν δεν υπάρχουν δεδομένα)
+      loadPayments(user.id),
       loadQuestions(user.id)
     ]);
   })();
@@ -245,16 +244,24 @@
   };
 
   // =====================
-  // Credits
+  // Credits (από ledger - client-side sum)
   // =====================
   async function loadCredits(user_id){
-    const { data: bal, error } = await sb
-      .from('app.credit_balances')
-      .select('balance')
-      .eq('user_id', user_id)
-      .maybeSingle();
-    if (error) console.error(error);
-    const balance = bal?.balance ?? 0;
+    // Φέρνουμε ΜΟΝΟ τις δικές του εγγραφές από το RLS-protected ledger
+    const { data, error } = await sb
+      .from('app.credit_ledger')
+      .select('delta')
+      .eq('user_id', user_id);
+
+    if (error) {
+      console.error('loadCredits error:', error);
+      $('creditsBalance').textContent = '0';
+      $('creditsPill').textContent = 'Credits: 0';
+      return;
+    }
+
+    // αθροίζουμε τα delta (client-side)
+    const balance = (data || []).reduce((sum, r) => sum + (r.delta || 0), 0);
     $('creditsBalance').textContent = balance;
     $('creditsPill').textContent = 'Credits: ' + balance;
   }
