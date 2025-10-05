@@ -13,10 +13,14 @@
     .card{background:#fff;border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.06);padding:24px}
     h1{margin:0 0 6px}
     .brand{color:var(--brand);font-weight:700}
-    .stat{font-size:48px;font-weight:700}
     .muted{color:#666}
-    .row{display:flex;gap:24px;align-items:center;justify-content:space-between}
+    .row{display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
     .btn{padding:8px 12px;border:1px solid #ddd;border-radius:10px;background:#fff;cursor:pointer}
+    .stats{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:16px;margin-top:20px}
+    .stat{background:#fafbfc;border:1px solid #eee;border-radius:12px;padding:16px}
+    .stat .label{font-size:13px;color:#666;margin-bottom:6px}
+    .stat .value{font-size:32px;font-weight:700}
+    .err{color:#b00020;margin-top:12px;display:none}
   </style>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
@@ -34,55 +38,133 @@
         </div>
       </div>
 
-      <div style="margin-top:24px">
-        <div class="muted">Τα Credits μου</div>
-        <div id="ps-credits" class="stat">—</div>
+      <!-- ΤΕΣΣΕΡΙΣ ΔΕΙΚΤΕΣ -->
+      <div class="stats">
+        <div class="stat">
+          <div class="label">Σύνολο credits</div>
+          <div id="ps-total" class="value">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Δεσμευμένα</div>
+          <div id="ps-reserved" class="value">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Διαθέσιμα</div>
+          <div id="ps-available" class="value">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Λήξη δεσμεύσεων</div>
+          <div id="ps-expiry" class="value">—</div>
+        </div>
       </div>
 
-      <div id="ps-error" class="muted" style="margin-top:16px;color:#b00020;display:none"></div>
+      <div id="ps-error" class="err"></div>
     </div>
   </div>
 
 <script>
-  // ---------- Supabase (με το δικό σου URL & ANON) ----------
+  // Supabase (δικά σου στοιχεία + schema app)
   const supabase = window.supabase.createClient(
     'https://sctqieecpfsaszcuqcrv.supabase.co',
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk',
-    { db: { schema: 'app' } } // <— Δουλεύουμε κατευθείαν στο schema app
+    { db: { schema: 'app' } }
   );
 
   const $ = (id) => document.getElementById(id);
-  const showError = (msg) => { const el=$('ps-error'); el.style.display='block'; el.textContent=msg; };
+  const showErr = (msg) => { const el=$('ps-error'); el.style.display='block'; el.textContent=msg; };
 
   document.addEventListener('DOMContentLoaded', init);
   $('btn-refresh').addEventListener('click', init);
-  $('btn-logout').addEventListener('click', async () => {
-    await supabase.auth.signOut();
-    location.href = '/login.html';
-  });
+  $('btn-logout').addEventListener('click', async () => { await supabase.auth.signOut(); location.href = '/login.html'; });
 
   async function init(){
     try{
-      $('ps-error').style.display = 'none';
-      // 1) χρήστης
+      $('ps-error').style.display='none';
+
+      // 1) Χρήστης
       const { data: { user }, error:uerr } = await supabase.auth.getUser();
       if (uerr) throw uerr;
       if (!user){ location.href = '/login.html'; return; }
       $('ps-email').textContent = user.email || '—';
 
-      // 2) balance από app.credit_balances
-      const { data, error } = await supabase
-        .from('credit_balances')   // schema app έχει ήδη οριστεί
-        .select('balance')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // 2) Σύνολο credits από credit_balances
+      const total = await getTotal(user.id);
 
-      if (error) throw error;
-      $('ps-credits').textContent = (data && typeof data.balance === 'number') ? data.balance : 0;
-    }catch(e){
+      // 3) Δεσμευμένα & επόμενη λήξη (δοκιμάζει view v_reserved, αλλιώς υπολογίζει από credit_reservations)
+      const { reserved, nextExpiry } = await getReservedAndExpiry(user.id);
+
+      // 4) Διαθέσιμα
+      const available = Math.max((total ?? 0) - (reserved ?? 0), 0);
+
+      // 5) Γέμισμα UI
+      $('ps-total').textContent = isNum(total) ? total : 0;
+      $('ps-reserved').textContent = isNum(reserved) ? reserved : 0;
+      $('ps-available').textContent = available;
+      $('ps-expiry').textContent = nextExpiry ? new Date(nextExpiry).toLocaleString('el-GR') : '—';
+
+    } catch(e){
       console.error(e);
-      $('ps-credits').textContent = '—';
-      showError(e.message || String(e));
+      showErr(e.message || String(e));
+      // fallback UI
+      $('ps-total').textContent = '—';
+      $('ps-reserved').textContent = '—';
+      $('ps-available').textContent = '—';
+      $('ps-expiry').textContent = '—';
+    }
+  }
+
+  function isNum(x){ return typeof x === 'number' && !Number.isNaN(x); }
+
+  async function getTotal(uid){
+    const { data, error } = await supabase
+      .from('credit_balances')
+      .select('balance')
+      .eq('user_id', uid)
+      .maybeSingle();
+    if (error) throw error;
+    return data?.balance ?? 0;
+  }
+
+  async function getReservedAndExpiry(uid){
+    // 1) Προσπάθησε view app.v_reserved (αν το έχεις διαμορφώσει)
+    try{
+      const { data, error } = await supabase
+        .from('v_reserved')
+        .select('reserved, next_expiry, user_id')
+        .eq('user_id', uid)
+        .maybeSingle();
+      if (!error && data){
+        return {
+          reserved: Number(data.reserved ?? 0),
+          nextExpiry: data.next_expiry || null
+        };
+      }
+    }catch(_) { /* αγνόησε, θα πέσουμε στο fallback */ }
+
+    // 2) Fallback: υπολογισμός από app.credit_reservations
+    // Κριτήριο: ενεργές κρατήσεις = released_at IS NULL ΚΑΙ expires_at > now()
+    try{
+      const nowISO = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('credit_reservations')
+        .select('amount, expires_at, released_at')
+        .eq('user_id', uid)
+        .is('released_at', null)
+        .gte('expires_at', nowISO);
+      if (error) throw error;
+
+      let sum = 0, minExp = null;
+      (data || []).forEach(r => {
+        const amt = Number(r.amount ?? 0);
+        sum += Number.isFinite(amt) ? amt : 0;
+        const exp = r.expires_at ? new Date(r.expires_at) : null;
+        if (exp && (!minExp || exp < minExp)) minExp = exp;
+      });
+
+      return { reserved: sum, nextExpiry: minExp ? minExp.toISOString() : null };
+    }catch(e){
+      // Αν δεν υπάρχει καν ο πίνακας, επέστρεψε μηδέν
+      return { reserved: 0, nextExpiry: null };
     }
   }
 </script>
