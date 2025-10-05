@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ProblemSolver • Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --brand:#FF6B00; --bg:#f7f8fb; --card:#fff; --text:#111; --muted:#6b7280; --ring:#e5e7eb; --radius:14px; }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    .wrap{max-width:1050px;margin:40px auto;padding:0 18px}
+    .header{background:var(--card);border-radius:20px;padding:22px 22px 16px;border:1px solid var(--ring);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    .title{font-size:28px;font-weight:800}.brand{color:var(--brand)}.email{color:var(--muted);font-size:14px;margin-top:4px}
+    .btns{display:flex;gap:10px}
+    button{padding:10px 14px;border-radius:12px;border:1px solid var(--ring);background:#fff;cursor:pointer;font-weight:600}
+    .btn-primary{background:var(--brand);border-color:var(--brand);color:#fff}
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:16px}
+    @media (max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:520px){.grid{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid var(--ring);border-radius:var(--radius);padding:22px 20px;display:flex;flex-direction:column;gap:8px;min-height:110px}
+    .label{font-size:14px;color:var(--muted)} .big{font-size:40px;font-weight:800;line-height:1} .dash{font-weight:700}
+    .err{margin-top:14px;color:#b91c1c;font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <div class="title">Καλώς ήρθες στο <span class="brand">ProblemSolver</span></div>
+        <div class="email" id="userEmail">—</div>
+      </div>
+      <div class="btns">
+        <button id="refreshBtn" class="btn-primary">Ανανέωση</button>
+        <button id="logoutBtn">Αποσύνδεση</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card"><div class="label">Σύνολο credits</div><div class="big" id="totalCredits">0</div></div>
+      <div class="card"><div class="label">Δεσμευμένα</div><div class="big" id="reservedCredits">0</div></div>
+      <div class="card"><div class="label">Διαθέσιμα</div><div class="big" id="availableCredits">0</div></div>
+      <div class="card"><div class="label">Λήξη δεσμεύσεων</div><div class="big dash" id="reservedExpiry">—</div></div>
+    </div>
+
+    <div class="err" id="errBox" hidden></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const el = id => document.getElementById(id);
+    const fmt = d => new Date(d).toLocaleString('el-GR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+
+    async function hardRedirectToLogin(){ window.location.href = '/login'; }
+
+    async function loadCredits(){
+      el('errBox').hidden = true; el('errBox').textContent = '';
+      const { data: { user }, error: uErr } = await supabase.auth.getUser();
+      if (uErr) { el('errBox').hidden=false; el('errBox').textContent='Auth error: '+uErr.message; return; }
+      if (!user) { return hardRedirectToLogin(); }
+
+      el('userEmail').textContent = user.email || '—';
+
+      const { data, error } = await supabase.rpc('get_my_credits');
+      if (error) { el('errBox').hidden=false; el('errBox').textContent='Σφάλμα φόρτωσης credits: '+error.message; return; }
+
+      const row = Array.isArray(data) ? data[0] : data;
+      const total = row?.total ?? 0;
+      const reserved = row?.reserved ?? 0;
+      const available = row?.available ?? Math.max(total - reserved, 0);
+      const nextExp = row?.next_expiration;
+
+      el('totalCredits').textContent = total;
+      el('reservedCredits').textContent = reserved;
+      el('availableCredits').textContent = available;
+      el('reservedExpiry').textContent = nextExp ? fmt(nextExp) : '—';
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', loadCredits);
+    document.getElementById('logoutBtn').addEventListener('click', async () => { await supabase.auth.signOut(); hardRedirectToLogin(); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) loadCredits(); });
+
+    (async () => { await loadCredits(); })();
+    supabase.auth.onAuthStateChange((_event, session) => { if (!session) hardRedirectToLogin(); });
+  </script>
+</body>
+</html>
