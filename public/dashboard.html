@@ -11,17 +11,24 @@
     *{box-sizing:border-box} html,body{height:100%}
     body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
     .wrap{max-width:1050px;margin:40px auto;padding:0 18px}
-    .header{background:var(--card);border-radius:20px;padding:22px 22px 16px;border:1px solid var(--ring);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    .header{
+      background:var(--card);border-radius:20px;padding:22px 22px 16px;border:1px solid var(--ring);
+      display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+      position:relative; z-index:10;  /* για να μην το σκεπάζει τίποτα */
+    }
     .title{font-size:28px;font-weight:800}.brand{color:var(--brand)}.email{color:var(--muted);font-size:14px;margin-top:4px}
-    .btns{display:flex;gap:10px}
-    button{padding:10px 14px;border-radius:12px;border:1px solid var(--ring);background:#fff;cursor:pointer;font-weight:600}
+    .btns{display:flex;gap:10px; position:relative; z-index:11;}
+    button{
+      padding:10px 14px;border-radius:12px;border:1px solid var(--ring);background:#fff;cursor:pointer;font-weight:600;
+      pointer-events:auto;
+    }
     .btn-primary{background:var(--brand);border-color:var(--brand);color:#fff}
     .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:16px}
     @media (max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media (max-width:520px){.grid{grid-template-columns:1fr}}
     .card{background:var(--card);border:1px solid var(--ring);border-radius:var(--radius);padding:22px 20px;display:flex;flex-direction:column;gap:8px;min-height:110px}
     .label{font-size:14px;color:var(--muted)} .big{font-size:40px;font-weight:800;line-height:1} .dash{font-weight:700}
-    .err{margin-top:14px;color:#b91c1c;font-size:13px}
+    .err{margin-top:14px;color:#b91c1c;font-size:13px;white-space:pre-wrap}
   </style>
 </head>
 <body>
@@ -32,8 +39,9 @@
         <div class="email" id="userEmail">—</div>
       </div>
       <div class="btns">
-        <button id="refreshBtn" class="btn-primary">Ανανέωση</button>
-        <button id="logoutBtn">Αποσύνδεση</button>
+        <!-- type="button" + inline onclick για 100% click -->
+        <button id="refreshBtn" class="btn-primary" type="button" onclick="loadCredits()">Ανανέωση</button>
+        <button id="logoutBtn" type="button" onclick="doLogout()">Αποσύνδεση</button>
       </div>
     </div>
 
@@ -47,8 +55,10 @@
     <div class="err" id="errBox" hidden></div>
   </div>
 
+  <!-- Supabase JS (CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    // Τα δικά σου στοιχεία (anon key, ΟΧΙ service role)
     const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk';
 
@@ -56,37 +66,46 @@
     const el = id => document.getElementById(id);
     const fmt = d => new Date(d).toLocaleString('el-GR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
 
-    async function hardRedirectToLogin(){ window.location.href = '/login'; }
+    function showErr(msg){ el('errBox').hidden=false; el('errBox').textContent = msg; }
+    function clearErr(){ el('errBox').hidden=true; el('errBox').textContent = ''; }
 
-    async function loadCredits(){
-      el('errBox').hidden = true; el('errBox').textContent = '';
-      const { data: { user }, error: uErr } = await supabase.auth.getUser();
-      if (uErr) { el('errBox').hidden=false; el('errBox').textContent='Auth error: '+uErr.message; return; }
-      if (!user) { return hardRedirectToLogin(); }
-
-      el('userEmail').textContent = user.email || '—';
-
-      const { data, error } = await supabase.rpc('get_my_credits');
-      if (error) { el('errBox').hidden=false; el('errBox').textContent='Σφάλμα φόρτωσης credits: '+error.message; return; }
-
-      const row = Array.isArray(data) ? data[0] : data;
-      const total = row?.total ?? 0;
-      const reserved = row?.reserved ?? 0;
-      const available = row?.available ?? Math.max(total - reserved, 0);
-      const nextExp = row?.next_expiration;
-
-      el('totalCredits').textContent = total;
-      el('reservedCredits').textContent = reserved;
-      el('availableCredits').textContent = available;
-      el('reservedExpiry').textContent = nextExp ? fmt(nextExp) : '—';
+    async function doLogout(){
+      await supabase.auth.signOut();
+      window.location.href = '/login';
     }
 
-    document.getElementById('refreshBtn').addEventListener('click', loadCredits);
-    document.getElementById('logoutBtn').addEventListener('click', async () => { await supabase.auth.signOut(); hardRedirectToLogin(); });
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) loadCredits(); });
+    async function loadCredits(){
+      try {
+        clearErr();
+        const { data: { user }, error: uErr } = await supabase.auth.getUser();
+        if (uErr) return showErr('Auth error: ' + uErr.message);
+        if (!user) return doLogout();
 
-    (async () => { await loadCredits(); })();
-    supabase.auth.onAuthStateChange((_event, session) => { if (!session) hardRedirectToLogin(); });
+        el('userEmail').textContent = user.email || '—';
+
+        const { data, error } = await supabase.rpc('get_my_credits');
+        if (error) return showErr('Σφάλμα φόρτωσης credits: ' + error.message);
+
+        const row = Array.isArray(data) ? data[0] : data;
+        const total = row?.total ?? 0;
+        const reserved = row?.reserved ?? 0;
+        const available = row?.available ?? Math.max(total - reserved, 0);
+        const nextExp = row?.next_expiration;
+
+        el('totalCredits').textContent = total;
+        el('reservedCredits').textContent = reserved;
+        el('availableCredits').textContent = available;
+        el('reservedExpiry').textContent = nextExp ? fmt(nextExp) : '—';
+      } catch (e){
+        showErr('Unhandled error: ' + (e?.message || e));
+      }
+    }
+
+    // Φόρτωση στην εκκίνηση
+    document.addEventListener('DOMContentLoaded', loadCredits);
+
+    // Auto-refresh όταν γυρνάς στο tab
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) loadCredits(); });
   </script>
 </body>
 </html>
