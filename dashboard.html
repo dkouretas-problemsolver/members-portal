@@ -21,7 +21,7 @@
     th, td{ padding:10px 8px; border-bottom:1px solid #eee; font-size:14px; text-align:left; }
     th{ color:#374151; font-weight:700; background:#fafafa; }
     .muted{ color:var(--muted); font-size:13px; }
-    input, textarea{ width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; font-size:14px; }
+    input, textarea, select{ width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; font-size:14px; }
     label{ font-size:13px; color:#374151; margin-bottom:6px; display:block; }
     .section{ margin-top:18px; }
     .badge{ display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; font-weight:600; }
@@ -32,6 +32,9 @@
     .msg.ok{ background:#ecfff2; color:#145a2a; border:1px solid #baf0c8; }
     .msg.err{ background:#fff1f1; color:#7d1a1a; border:1px solid #f0bcbc; }
     .pill{ padding:8px 12px; background:#111; color:#fff; border-radius:999px; font-weight:700; }
+    .twocol{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .checkbox{ display:flex; align-items:center; gap:8px; }
+    .checkbox input{ width:auto; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -58,11 +61,12 @@
     </div>
   </div>
 
-  <!-- Grid: Προφίλ + Credits / αγορές -->
+  <!-- Grid: Προφίλ + Credits -->
   <div class="grid">
     <div class="card">
       <h2>Στοιχεία προφίλ</h2>
-      <div class="muted">Ενημέρωσε τα στοιχεία τιμολόγησης & επικοινωνίας.</div>
+      <div class="muted">Ενημέρωσε στοιχεία επικοινωνίας & τιμολόγησης.</div>
+
       <div class="section">
         <label>Ονοματεπώνυμο</label>
         <input id="fullName" placeholder="Πλήρες όνομα" />
@@ -75,7 +79,35 @@
 
         <label style="margin-top:10px;">Τηλέφωνο</label>
         <input id="phone" placeholder="+30 ..." />
+
+        <div class="checkbox" style="margin-top:12px;">
+          <input type="checkbox" id="wantsInvoice" />
+          <label for="wantsInvoice" style="margin:0;">Θέλω τιμολόγιο</label>
+        </div>
+
+        <div class="twocol" style="margin-top:10px;">
+          <div>
+            <label>Διεύθυνση</label>
+            <input id="billingAddress" placeholder="Οδός & αριθμός" />
+          </div>
+          <div>
+            <label>Πόλη</label>
+            <input id="billingCity" placeholder="Πόλη" />
+          </div>
+        </div>
+
+        <div class="twocol" style="margin-top:10px;">
+          <div>
+            <label>Τ.Κ.</label>
+            <input id="billingPostcode" placeholder="12345" />
+          </div>
+          <div>
+            <label>Χώρα</label>
+            <input id="billingCountry" placeholder="Greece" />
+          </div>
+        </div>
       </div>
+
       <div class="section">
         <button id="saveProfileBtn" class="btn">Αποθήκευση</button>
         <div id="profileMsg" class="msg"></div>
@@ -83,8 +115,8 @@
     </div>
 
     <div class="card">
-      <h2>Credits & Αγορές</h2>
-      <div class="muted">Το υπόλοιπό σου και οι πρόσφατες κινήσεις.</div>
+      <h2>Credits</h2>
+      <div class="muted">Το υπόλοιπό σου.</div>
       <div class="section">
         <div class="row" style="align-items:flex-end;">
           <div>
@@ -93,14 +125,17 @@
           </div>
         </div>
       </div>
+
+      <!-- Κρατάμε χώρο για μελλοντικές κινήσεις/πληρωμές -->
       <div class="section">
-        <h3 style="margin:0 0 8px;font-size:15px;">Πρόσφατες χρεώσεις</h3>
+        <h3 style="margin:0 0 8px;font-size:15px;">Πρόσφατες κινήσεις</h3>
         <table id="paymentsTable">
           <thead><tr>
             <th>Ημ/νία</th><th>Ποσό</th><th>Κατάσταση</th><th>Περιγραφή</th>
           </tr></thead>
           <tbody></tbody>
         </table>
+        <div class="muted" style="margin-top:8px;">(Θα συμπληρωθούν στο επόμενο βήμα)</div>
       </div>
     </div>
   </div>
@@ -141,11 +176,10 @@
     const user = session.user;
     $('userEmail').textContent = user.email || user.user_metadata?.email || '—';
 
-    // Load everything
     await Promise.all([
       loadProfile(user.id),
       loadCredits(user.id),
-      loadPayments(user.id),
+      loadPayments(user.id),   // placeholder (μένει κενό αν δεν υπάρχουν δεδομένα)
       loadQuestions(user.id)
     ]);
   })();
@@ -159,16 +193,25 @@
   // Profile
   // =====================
   async function loadProfile(user_id){
-    const { data, error } = await sb.from('ps_profiles').select('*').eq('user_id', user_id).maybeSingle();
+    // Σχήμα: app.ps_profiles
+    const { data, error } = await sb.from('app.ps_profiles').select('*').eq('user_id', user_id).maybeSingle();
+    if (error?.code === '42P01') {  // table not found
+      console.warn('Table app.ps_profiles not found — skipping profile section for now');
+      return;
+    }
     if (error) return console.error(error);
     if (data){
-      $('fullName').value = data.full_name || '';
-      $('company').value  = data.company || '';
-      $('vat').value      = data.vat || '';
-      $('phone').value    = data.phone || '';
+      $('fullName').value        = data.full_name || '';
+      $('company').value         = data.company || '';
+      $('vat').value             = data.vat || '';
+      $('phone').value           = data.phone || '';
+      $('wantsInvoice').checked  = !!data.wants_invoice;
+      $('billingAddress').value  = data.billing_address || '';
+      $('billingCity').value     = data.billing_city || '';
+      $('billingPostcode').value = data.billing_postcode || '';
+      $('billingCountry').value  = data.billing_country || '';
     } else {
-      // ensure record exists
-      await sb.from('ps_profiles').insert({ user_id }).select().maybeSingle();
+      await sb.from('app.ps_profiles').insert({ user_id }).select().maybeSingle();
     }
   }
 
@@ -176,15 +219,27 @@
     hide($('profileMsg'));
     const { data: { session } } = await sb.auth.getSession();
     if (!session) return;
+
+    // Ελέγχουμε αν υπάρχει ο πίνακας — αν όχι, μην κάνεις τίποτα (να μη «σκάει»)
+    const probe = await sb.from('app.ps_profiles').select('user_id').limit(1);
+    if (probe.error?.code === '42P01') {
+      return show($('profileMsg'),'Ο πίνακας προφίλ δεν υπάρχει ακόμη. Θα τον ενεργοποιήσουμε στο επόμενο βήμα.', false);
+    }
+
     const payload = {
       user_id: session.user.id,
       full_name: $('fullName').value.trim(),
       company: $('company').value.trim(),
       vat: $('vat').value.trim(),
       phone: $('phone').value.trim(),
+      wants_invoice: $('wantsInvoice').checked,
+      billing_address: $('billingAddress').value.trim(),
+      billing_city: $('billingCity').value.trim(),
+      billing_postcode: $('billingPostcode').value.trim(),
+      billing_country: $('billingCountry').value.trim(),
     };
-    // upsert
-    const { error } = await sb.from('ps_profiles').upsert(payload, { onConflict: 'user_id' });
+
+    const { error } = await sb.from('app.ps_profiles').upsert(payload, { onConflict: 'user_id' });
     if (error) return show($('profileMsg'),'Σφάλμα αποθήκευσης: '+error.message);
     show($('profileMsg'),'Αποθηκεύτηκε!', true);
   };
@@ -193,38 +248,24 @@
   // Credits
   // =====================
   async function loadCredits(user_id){
-    // balance view
-    const { data: bal } = await sb.from('ps_credits_balance').select('balance').eq('user_id', user_id).maybeSingle();
+    const { data: bal, error } = await sb
+      .from('app.credit_balances')
+      .select('balance')
+      .eq('user_id', user_id)
+      .maybeSingle();
+    if (error) console.error(error);
     const balance = bal?.balance ?? 0;
     $('creditsBalance').textContent = balance;
     $('creditsPill').textContent = 'Credits: ' + balance;
   }
 
   // =====================
-  // Payments
+  // Payments (placeholder)
   // =====================
   async function loadPayments(user_id){
-    const { data, error } = await sb
-      .from('ps_payments')
-      .select('created_at, amount_cents, currency, status, description')
-      .eq('user_id', user_id)
-      .order('created_at', { ascending:false })
-      .limit(20);
-    if (error) return console.error(error);
-
     const tbody = $('paymentsTable').querySelector('tbody');
     tbody.innerHTML = '';
-    (data||[]).forEach(p=>{
-      const tr = document.createElement('tr');
-      const amt = (p.amount_cents/100).toFixed(2) + ' ' + (p.currency||'EUR');
-      tr.innerHTML = `
-        <td>${new Date(p.created_at).toLocaleString()}</td>
-        <td><strong>${amt}</strong></td>
-        <td>${p.status||'-'}</td>
-        <td>${p.description||''}</td>
-      `;
-      tbody.appendChild(tr);
-    });
+    // Θα το συνδέσουμε στο επόμενο βήμα με πραγματικό πίνακα κινήσεων.
   }
 
   // =====================
@@ -232,8 +273,8 @@
   // =====================
   async function loadQuestions(user_id){
     const { data, error } = await sb
-      .from('ps_questions')
-      .select('id,title,status,created_at, ps_answers(id,created_at,content)')
+      .from('app.questions')
+      .select('id,title,status,created_at, answers(id,created_at,content)')
       .eq('user_id', user_id)
       .order('created_at', { ascending:false })
       .limit(50);
@@ -242,7 +283,7 @@
     const tbody = $('questionsTable').querySelector('tbody');
     tbody.innerHTML = '';
     (data||[]).forEach(q=>{
-      const ans = (q.ps_answers && q.ps_answers.length) ? q.ps_answers[0] : null;
+      const ans = (q.answers && q.answers.length) ? q.answers[0] : null;
       const badgeClass = q.status==='answered' ? 'answered' : (q.status==='closed' ? 'closed' : 'open');
       const ansCell = ans ? `<a href="/answer.html?q=${q.id}" style="color:#0b57d0;text-decoration:none;">Προβολή</a>` : '<span class="muted">—</span>';
       const tr = document.createElement('tr');
