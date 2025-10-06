@@ -49,19 +49,19 @@
     <div class="card">
       <div class="grid">
         <div class="stat">
-          <h3>Σύνολο credits</h3>
+          <h3>ΣΥΝΟΛΟ CREDITS</h3>
           <div id="credits-total" class="val">—</div>
           <div class="hint">Από το υπόλοιπο του λογαριασμού σου.</div>
         </div>
         <div class="stat">
-          <h3>Δεσμευμένα</h3>
+          <h3>ΔΕΣΜΕΥΜΕΝΑ</h3>
           <div id="credits-reserved" class="val">—</div>
           <div id="next-exp" class="hint">Επόμ. λήξη: —</div>
         </div>
         <div class="stat">
-          <h3>Διαθέσιμα</h3>
+          <h3>ΔΙΑΘΕΣΙΜΑ</h3>
           <div id="credits-available" class="val">—</div>
-          <div id="avail-hint" class="hint">= Σύνολο − Δεσμευμένα</div>
+          <div class="hint">= Σύνολο − Δεσμευμένα</div>
         </div>
       </div>
 
@@ -89,11 +89,11 @@
     </div>
   </div>
 
-  <!-- ====== SCRIPT (έτοιμο) ====== -->
+  <!-- ====== SCRIPT ====== -->
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-    // ✅ Τα δικά σου στοιχεία (που μου έδωσες)
+    // ΤΑ ΔΙΚΑ ΣΟΥ ΣΤΟΙΧΕΙΑ
     const SUPABASE_URL  = 'https://sctqieecpfsaszcuqcrv.supabase.co'
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk'
 
@@ -108,13 +108,11 @@
 
     async function ensureSession(){
       const { data: { session } } = await supabase.auth.getSession()
-      if (session) return session
-      // Αν η σελίδα ανοίγει μετά από magic link, θα γίνει auto sign-in.
-      return null
+      return session || null
     }
 
     async function fetchSummary(){
-      const { data, error } = await supabase.rpc('get_user_credits_summary')
+      const { data, error } = await supabase.rpc('get_user_credits_summary') // public wrapper
       if (error) throw error
       const row = Array.isArray(data) ? data[0] : data
       const total     = row?.total ?? 0
@@ -130,11 +128,11 @@
       $('credits-available').classList.toggle('ok',   available > 0)
     }
 
+    // 🔧 ΠΡΟΣΟΧΗ: ζητάμε από schema 'app' (όχι public)
     async function fetchReservations(session){
       const tbody = document.querySelector('#tbl-res tbody')
       tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#777;">Φόρτωση…</td></tr>`
 
-      // Φέρνουμε ΜΟΝΟ τις active κρατήσεις του τρέχοντος χρήστη
       const userId = session?.user?.id
       if (!userId){
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#777;">Δεν υπάρχει ενεργό login.</td></tr>`
@@ -142,6 +140,7 @@
       }
 
       const { data, error } = await supabase
+        .schema('app')
         .from('credit_reservations')
         .select('question_id, amount, status, expires_at, created_at')
         .eq('user_id', userId)
