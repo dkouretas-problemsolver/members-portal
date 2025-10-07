@@ -4,5 +4,9 @@
     { "src": "^/dashboard$", "dest": "/dashboard.html" },
     { "src": "^/reset$", "dest": "/reset.html" },
     { "src": "^/$", "dest": "/index.html" }
+  ],
+  "redirects": [
+    { "source": "/login", "destination": "/", "permanent": true },
+    { "source": "/login.html", "destination": "/", "permanent": true }
   ]
 }
