@@ -1,12 +1,15 @@
 {
   "version": 2,
   "routes": [
-    { "src": "^/dashboard$", "dest": "/dashboard.html" },
-    { "src": "^/reset$", "dest": "/reset.html" },
-    { "src": "^/$", "dest": "/index.html" }
-  ],
-  "redirects": [
-    { "source": "/login", "destination": "/", "permanent": true },
-    { "source": "/login.html", "destination": "/", "permanent": true }
+    { "src": "^/$", "dest": "/public/index.html" },
+    { "src": "^/dashboard$", "dest": "/public/dashboard.html" },
+    { "src": "^/reset$", "dest": "/public/reset.html" },
+
+    { "src": "^/login$", "dest": "/public/index.html" },
+    { "src": "^/login.html$", "dest": "/public/index.html" },
+
+    { "src": "^/favicon.ico$", "dest": "/public/favicon.ico" },
+
+    { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }
