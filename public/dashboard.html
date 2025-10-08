@@ -122,20 +122,20 @@
     const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk';
 
-    // Supabase client with app schema (CRITICAL fix)
+    // Supabase client pinned to schema 'app'
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: true },
       db: { schema: 'app' }
     });
 
     // === Helpers ===
+    const el = (sel) => document.querySelector(sel);
     const fmtDate = (iso) => {
       if (!iso) return '—';
       const d = new Date(iso);
       if (isNaN(d)) return '—';
       return d.toLocaleString('el-GR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
     };
-    const el = (sel) => document.querySelector(sel);
 
     async function requireUser() {
       const { data: { user }, error } = await supabase.auth.getUser();
@@ -147,32 +147,41 @@
     async function loadAccount(user) {
       el('#accEmail').textContent = user.email || '—';
       el('#accUser').textContent  = user.id || '—';
-      el('#accInstance').textContent = (await supabase.from('user_emails').select('id').eq('user_id', user.id).limit(1).maybeSingle()).data?.id ?? '—';
-      // Αν έχεις πίνακα προφίλ με όνομα, φέρε το εδώ. Για τώρα κρατάμε "—".
+      // Αν έχεις extra στοιχεία προφίλ, μπορείς να τα φέρεις εδώ
       el('#accName').textContent = '—';
+
+      // demo: αν έχεις πίνακα user_emails → δείξε ένα id
+      try {
+        const { data } = await supabase
+          .from('user_emails')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .maybeSingle();
+        el('#accInstance').textContent = data?.id ?? '—';
+      } catch { el('#accInstance').textContent = '—'; }
     }
 
-    async function loadBalances(user) {
-      // 1) Σύνολο από credit_balances
+    async function loadBalances() {
+      // total from credit_balances
       let total = 0;
       try {
-        const { data, error } = await supabase.from('credit_balances')
+        const { data, error } = await supabase
+          .from('credit_balances')
           .select('balance')
           .maybeSingle();
         if (error) throw error;
         total = (data?.balance ?? 0) | 0;
-      } catch (e) {
-        console.error('credit_balances:', e);
-      }
+      } catch (e) { console.error('credit_balances:', e); }
 
-      // 2) Δεσμευμένα & επόμενη λήξη από reservations (active & not expired)
+      // reserved & next expiry from credit_reservations (active & not expired)
       let reserved = 0;
       let nextExpiry = null;
       try {
         const { data, error } = await supabase
-          .from('reservations')
+          .from('credit_reservations')
           .select('amount, credits_reserved, status, expires_at, created_at')
-          .eq('status', 'active'); // RLS πρέπει να επιστρέψει μόνο του χρήστη
+          .eq('status', 'active');
         if (error) throw error;
 
         const now = new Date();
@@ -192,9 +201,7 @@
           const d = new Date(r.expires_at);
           if (!nextExpiry || d < nextExpiry) nextExpiry = d;
         });
-      } catch (e) {
-        console.warn('reservations:', e.message || e);
-      }
+      } catch (e) { console.warn('credit_reservations:', e.message || e); }
 
       const available = Math.max(0, total - reserved);
       el('#totalCredits').textContent = total;
@@ -206,7 +213,7 @@
     async function loadReservations() {
       try {
         const { data, error } = await supabase
-          .from('reservations')
+          .from('credit_reservations')
           .select('id, amount, credits_reserved, status, created_at, expires_at, question_id')
           .eq('status', 'active')
           .order('created_at', { ascending: false })
@@ -215,7 +222,7 @@
 
         const tbody = el('#tbodyRes');
         tbody.innerHTML = '';
-        if (!data || !data.length) {
+        if (!data?.length) {
           tbody.innerHTML = '<tr><td class="muted" colspan="5">Καμία ενεργή κράτηση.</td></tr>';
           return;
         }
@@ -238,10 +245,9 @@
     }
 
     async function loadQuestions() {
-      // Προσαρμόζεται στο σχήμα σου (αν πίνακας λέγεται αλλιώς, άλλαξέ το)
       try {
         const { data, error } = await supabase
-          .from('questions')
+          .from('qa_questions')
           .select('id, created_at, subject, status, credits')
           .order('created_at', { ascending: false })
           .limit(50);
@@ -249,7 +255,7 @@
 
         const tbody = el('#tbodyQuestions');
         tbody.innerHTML = '';
-        if (!data || !data.length) {
+        if (!data?.length) {
           tbody.innerHTML = '<tr><td class="muted" colspan="4">—</td></tr>';
           return;
         }
@@ -269,10 +275,9 @@
     }
 
     async function loadAnswers() {
-      // Προσαρμόζεται στο σχήμα σου (αν πίνακας λέγεται αλλιώς, άλλαξέ το)
       try {
         const { data, error } = await supabase
-          .from('answers')
+          .from('qa_answers')
           .select('id, created_at, subject, status')
           .order('created_at', { ascending: false })
           .limit(50);
@@ -280,7 +285,7 @@
 
         const tbody = el('#tbodyAnswers');
         tbody.innerHTML = '';
-        if (!data || !data.length) {
+        if (!data?.length) {
           tbody.innerHTML = '<tr><td class="muted" colspan="4">—</td></tr>';
           return;
         }
@@ -304,9 +309,8 @@
       const user = await requireUser();
       if (!user) return;
       await loadAccount(user);
-      await loadBalances(user);
+      await loadBalances();
       await loadReservations();
-      // Τα δύο παρακάτω αν υπάρχουν πίνακες
       await loadQuestions();
       await loadAnswers();
     }
