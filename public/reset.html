@@ -1,104 +1,84 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="el">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Αλλαγή Κωδικού – ProblemSolver</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ProblemSolver • Ορισμός νέου κωδικού</title>
   <style>
-    body { font-family: Inter, Arial, sans-serif; margin:0; padding:40px; }
-    .card { max-width: 520px; margin: 0 auto; padding: 24px; border:1px solid #eee; border-radius:16px; box-shadow:0 6px 24px rgba(0,0,0,.06); }
-    h1 { font-size: 20px; margin:0 0 12px; }
-    input { width:100%; padding:12px 14px; border:1px solid #ddd; border-radius:12px; font-size:16px; }
-    button{ margin-top:12px; padding:12px 16px; border:0; border-radius:12px; font-size:16px; cursor:pointer; background:#FF6B00; color:#fff; }
-    .msg { margin-top:10px; font-size:14px; color:#666; }
-    .err { color:#c00; }
+    :root{--brand:#FF6B00;--muted:#6b7280;--bg:#f6f7f9}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:#111}
+    main{min-height:100dvh;display:grid;place-items:center;padding:24px}
+    .card{width:100%;max-width:460px;background:#fff;border:1px solid #eee;border-radius:16px;padding:22px;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+    h1{margin:0 0 8px 0;font-size:22px}
+    p{margin:0 0 14px 0;color:var(--muted)}
+    label{font-size:13px;color:#374151}
+    input{width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;margin-top:6px}
+    button{width:100%;margin-top:12px;padding:10px 12px;border-radius:10px;border:1px solid var(--brand);background:var(--brand);color:#fff;cursor:pointer}
+    .muted{color:var(--muted);font-size:12px;margin-top:8px}
+    .ok{color:#047857}
+    .err{color:#b91c1c}
   </style>
 </head>
 <body>
+<main>
   <div class="card">
     <h1>Ορισμός νέου κωδικού</h1>
-    <p class="msg" id="info">Φόρτωμα…</p>
-    <div id="formBox" style="display:none">
-      <input id="pw1" type="password" placeholder="Νέος κωδικός" />
-      <input id="pw2" type="password" placeholder="Επανάληψη κωδικού" style="margin-top:10px;" />
-      <button id="setBtn">Αποθήκευση</button>
-      <p class="msg" id="msg"></p>
+    <p>Άνοιξες αυτή τη σελίδα από το email ανάκτησης κωδικού.</p>
+
+    <div>
+      <label for="pw1">Νέος κωδικός</label>
+      <input id="pw1" type="password" placeholder="••••••••">
     </div>
+    <div>
+      <label for="pw2">Επιβεβαίωση κωδικού</label>
+      <input id="pw2" type="password" placeholder="••••••••">
+    </div>
+    <button id="saveBtn">Αποθήκευση</button>
+    <div id="msg" class="muted"></div>
+
+    <p class="muted">Αν δεν ήρθες από email ανάκτησης, επέστρεψε στην <a href="/login.html">είσοδο</a>.</p>
   </div>
+</main>
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+  const SUPABASE_URL = "https://sctqieecpfsaszcuqcrv.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
+  });
 
-    const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co'
-    const SUPABASE_ANON_KEY = '<ANON_KEY>'
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { autoRefreshToken:true, persistSession:true, detectSessionInUrl:true }
-    })
+  const $ = (s)=>document.querySelector(s);
+  const setMsg = (t, cls="") => { const el=$("#msg"); el.textContent=t||""; el.className="muted "+cls; };
 
-    const info = document.getElementById('info')
-    const formBox = document.getElementById('formBox')
-    const setBtn = document.getElementById('setBtn')
-    const msg = document.getElementById('msg')
-
-    // Parse helper: διαβάζει είτε hash (#) είτε query (?)
-    const getAllParams = () => {
-      const hashParams = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : '')
-      const queryParams = new URLSearchParams(location.search.startsWith('?') ? location.search.slice(1) : '')
-      // προτεραιότητα στο hash (Supabase default)
-      return new Map([ ...queryParams.entries(), ...hashParams.entries() ])
+  // Αν δεν υπάρχει session από recovery link, γύρνα login
+  (async ()=>{
+    // Σε νεότερα flows, ο Supabase γράφει το session στο URL (#access_token=…)
+    // το detectSessionInUrl:true θα το “ανταλλάξει” μόνο του.
+    const { data:{ session } } = await sb.auth.getSession();
+    if (!session) {
+      // Δώσε 1-2” να προλάβει το exchange από το hash fragment
+      setTimeout(async ()=>{
+        const { data:{ session: s2 } } = await sb.auth.getSession();
+        if (!s2) location.replace("/login.html");
+      }, 1500);
     }
+  })();
 
-    // 1) Τράβα session (θα “ρουφήξει” tokens από το URL αν υπάρχουν)
-    const ensureSession = async () => {
-      // Αν το URL περιέχει access_token ή code → δώσε λίγο χρόνο στο SDK
-      const params = getAllParams()
-      const hasToken = params.has('access_token') || params.has('code') || params.get('type') === 'recovery'
-      if (hasToken) {
-        // ένα μικρό await βοηθάει σε μερικούς browsers
-        await new Promise(r => setTimeout(r, 50))
-      }
-      return await supabase.auth.getSession()
-    }
+  $("#saveBtn").addEventListener("click", async ()=>{
+    const p1 = $("#pw1").value.trim();
+    const p2 = $("#pw2").value.trim();
+    if (!p1 || !p2) return setMsg("Συμπλήρωσε και τα δύο πεδία.", "err");
+    if (p1 !== p2)  return setMsg("Οι κωδικοί δεν ταιριάζουν.", "err");
+    setMsg("Αποθήκευση…");
 
-    const showForm = (email) => {
-      info.textContent = 'Βρέθηκε λογαριασμός ' + (email || '')
-      formBox.style.display = 'block'
-    }
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if (error) return setMsg("Σφάλμα: "+error.message, "err");
 
-    // 2) Αρχική προσπάθεια
-    const { data: first } = await ensureSession()
-    if (first.session?.user) {
-      showForm(first.session.user.email)
-    } else {
-      // 3) Περίμενε event από το SDK (όταν διαβάσει το token)
-      info.textContent = 'Αναμονή επιβεβαίωσης συνδέσμου…'
-      supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
-          showForm(session?.user?.email)
-        }
-      })
-
-      // 4) Αν δεν βλέπουμε token καθόλου, δείξε σαφές μήνυμα
-      const params = getAllParams()
-      const noToken = !(params.has('access_token') || params.has('code') || params.get('type') === 'recovery')
-      if (noToken) {
-        info.innerHTML = '<span class="err">Δεν βρέθηκε ενεργό reset link.</span> Άνοιξε τη σελίδα από το email ανάκτησης κωδικού.'
-      }
-    }
-
-    // 5) Υποβολή νέου κωδικού
-    setBtn.addEventListener('click', async () => {
-      msg.textContent = ''
-      const p1 = document.getElementById('pw1').value.trim()
-      const p2 = document.getElementById('pw2').value.trim()
-      if (!p1 || p1 !== p2) { msg.textContent = 'Οι κωδικοί δεν ταιριάζουν.'; return }
-
-      const { error } = await supabase.auth.updateUser({ password: p1 })
-      if (error) { msg.textContent = 'Σφάλμα: ' + error.message; return }
-
-      msg.textContent = 'Ο κωδικός άλλαξε. Μεταφορά στο dashboard…'
-      setTimeout(() => { window.location.href = '/dashboard.html' }, 700)
-    })
-  </script>
+    setMsg("Ο κωδικός άλλαξε. Κάνω αποσύνδεση…", "ok");
+    await sb.auth.signOut();
+    location.replace("/login.html");
+  });
+</script>
 </body>
 </html>
