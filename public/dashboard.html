@@ -122,33 +122,27 @@
   <div class="foot">© ProblemSolver.gr • Αν κάτι δεν φορτώνει, πάτα «Ανανέωση» ή κάνε νέα είσοδο.</div>
 </main>
 
-<!-- Supabase JS -->
 <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-  // ========= 1) ΡΥΘΜΙΣΗ SUPABASE (ΒΑΛΕ ΤΑ ΔΙΚΑ ΣΟΥ) =========
-  const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";      // <-- ΑΛΛΑΞΕ ΤΟ
-  const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";                        // <-- ΑΛΛΑΞΕ ΤΟ
+  // ========= 1) SUPABASE =========
+  const SUPABASE_URL = "https://sctqieecpfsaszcuqcrv.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk";
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
 
-  // ========= 2) ΒΟΗΘΗΤΙΚΑ =========
+  // ========= 2) HELPERS =========
   const $ = (sel) => document.querySelector(sel);
   const fmtDate = (v) => v ? new Date(v).toLocaleString('el-GR') : "—";
   const safe = (x) => (x ?? "—");
   function setSpin(on){ $("#spin").classList.toggle("show", !!on); }
 
   async function mustUser() {
-    const { data: { user }, error } = await sb.auth.getUser();
-    if (error || !user) {
-      // αν δεν είναι logged-in, γύρνα στο login
-      location.href = "/members/login.html";
-      return null;
-    }
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) { location.href = "/login.html"; return null; }
     return user;
   }
 
-  // Ασφαλές select με optional match/order/limit (front-end only)
   async function safeSelect(table, cols, { match=null, orderCol=null, asc=false, limit=null } = {}) {
     let q = sb.from(table).select(cols);
     if (match) Object.entries(match).forEach(([k,v])=>{ q = q.eq(k, v); });
@@ -159,30 +153,28 @@
     return data || [];
   }
 
-  // ========= 3) ΦΟΡΤΩΣΗ ΛΟΓΑΡΙΑΣΜΟΥ & KPI =========
+  // ========= 3) LOAD =========
   async function loadAll() {
     setSpin(true);
     try {
       const user = await mustUser();
       if (!user) return;
+
       $("#uId").textContent = user.id;
       $("#uEmail").textContent = user.email || "—";
       $("#uName").textContent = user.user_metadata?.full_name || user.user_metadata?.name || "—";
 
-      // ---- Credits (από app.credit_balances)
-      // total από balance
+      // Total credits
       let total = 0;
       try {
         const bal = await safeSelect('app.credit_balances', 'balance', { match: { user_id: user.id } });
         total = Number(bal?.[0]?.balance || 0);
       } catch(e) {
-        // fallback σε public schema αν χρειαστεί
         const bal = await safeSelect('credit_balances', 'balance', { match: { user_id: user.id } });
         total = Number(bal?.[0]?.balance || 0);
       }
 
-      // ---- Reserved (από app.credit_reservations) • active & not expired
-      // Προσπαθεί πρώτα με email (σε περίπτωση shared email), μετά με user_id
+      // Reservations (active & not expired)
       let reserved = 0, nextExpiry = null;
       const nowISO = new Date().toISOString();
 
@@ -192,14 +184,11 @@
       }
 
       let resRows = [];
-      try {
-        if (user.email) resRows = await fetchRes({ email: user.email });
-      } catch(e) { /* ignore */ }
+      try { if (user.email) resRows = await fetchRes({ email: user.email }); } catch(e) {}
       if (!resRows.length) {
-        try { resRows = await fetchRes({ user_id: user.id }); } catch(e) { /* ignore */ }
+        try { resRows = await fetchRes({ user_id: user.id }); } catch(e) {}
       }
 
-      // Υπολογισμός reserved & κοντινότερης λήξης
       resRows.forEach(r=>{
         const ok = (r.status === 'active') && (!r.expires_at || r.expires_at > nowISO);
         if (ok) {
@@ -218,17 +207,22 @@
       $("#kpiReserved").textContent = String(reserved);
       $("#kpiAvailable").textContent = String(available);
       $("#kpiExpiry").textContent = nextExpiry ? nextExpiry.toLocaleDateString('el-GR') : "—";
-      $("#kpiTotalHint").textContent = "";
       $("#kpiReservedHint").textContent = reserved>0 ? "Υπάρχουν ενεργές κρατήσεις" : "Καμία ενεργή κράτηση";
-      $("#kpiAvailableHint").textContent = available>=0 ? "Υπολογισμός: σύνολο - δεσμευμένα" : "";
+      $("#kpiAvailableHint").textContent = "Υπολογισμός: σύνολο - δεσμευμένα";
+      $("#kpiTotalHint").textContent = "";
       $("#kpiExpiryHint").textContent = nextExpiry ? "Κοντινότερη λήξη κράτησης" : "—";
 
-      // ---- Reservations table (μόνο active για καθαρότητα)
+      // Reservations table (active only)
       const tbodyRes = $("#tblRes tbody"); tbodyRes.innerHTML = "";
       const activeRows = resRows.filter(r => r.status==='active' && (!r.expires_at || r.expires_at > nowISO));
       if (!activeRows.length) {
         $("#reservationsWrap").innerHTML = '<div class="empty">Δεν υπάρχουν ενεργές κρατήσεις.</div>';
       } else {
+        $("#reservationsWrap").innerHTML = `
+          <table id="tblRes">
+            <thead><tr><th>Ημερομηνία</th><th>Ποσό</th><th>Κατάσταση</th><th>Λήξη</th></tr></thead>
+            <tbody></tbody></table>`;
+        const body = document.querySelector("#tblRes tbody");
         activeRows.forEach(r=>{
           const tr = document.createElement('tr');
           tr.innerHTML = `
@@ -236,23 +230,18 @@
             <td>${Number(r.credits_reserved ?? r.amount ?? 0)}</td>
             <td><span class="pill ok">active</span></td>
             <td>${r.expires_at ? fmtDate(r.expires_at) : '—'}</td>`;
-          tbodyRes.appendChild(tr);
+          body.appendChild(tr);
         });
       }
 
-      // ---- Questions history
-      // πίνακας app.questions (columns: id, created_at, subject, status, credits_spent)
+      // Questions
       const qBody = $("#tblQuestions tbody"); qBody.innerHTML = "";
       let questions = [];
       try {
-        questions = await safeSelect('app.questions',
-          'id,created_at,subject,status,credits_spent',
-          { match: { user_id: user.id }, orderCol:'created_at', asc:false, limit:100 });
+        questions = await safeSelect('app.questions','id,created_at,subject,status,credits_spent',{ match:{ user_id:user.id }, orderCol:'created_at', asc:false, limit:100 });
       } catch(e) {
         try {
-          questions = await safeSelect('questions',
-            'id,created_at,subject,status,credits_spent',
-            { match: { user_id: user.id }, orderCol:'created_at', asc:false, limit:100 });
+          questions = await safeSelect('questions','id,created_at,subject,status,credits_spent',{ match:{ user_id:user.id }, orderCol:'created_at', asc:false, limit:100 });
         } catch(_){}
       }
       if (!questions.length) {
@@ -270,26 +259,21 @@
         });
       }
 
-      // ---- Answers list (link αν υπάρχει url)
-      // πίνακας app.answers (id, created_at, subject, status, url)
+      // Answers
       const aBody = $("#tblAnswers tbody"); aBody.innerHTML = "";
       let answers = [];
       try {
-        answers = await safeSelect('app.answers',
-          'id,created_at,subject,status,url,user_id',
-          { match: { user_id: user.id }, orderCol:'created_at', asc:false, limit:100 });
+        answers = await safeSelect('app.answers','id,created_at,subject,status,url,user_id',{ match:{ user_id:user.id }, orderCol:'created_at', asc:false, limit:100 });
       } catch(e) {
         try {
-          answers = await safeSelect('answers',
-            'id,created_at,subject,status,url,user_id',
-            { match: { user_id: user.id }, orderCol:'created_at', asc:false, limit:100 });
+          answers = await safeSelect('answers','id,created_at,subject,status,url,user_id',{ match:{ user_id:user.id }, orderCol:'created_at', asc:false, limit:100 });
         } catch(_){}
       }
       if (!answers.length) {
         $("#answersWrap").innerHTML = '<div class="empty">Δεν υπάρχουν απαντήσεις ακόμα.</div>';
       } else {
         answers.forEach(a=>{
-          const pillClass = a.status==='sent' || a.status==='final' ? 'ok' : (a.status==='draft' ? 'warn' : 'mute');
+          const pillClass = (a.status==='sent'||a.status==='final') ? 'ok' : (a.status==='draft' ? 'warn' : 'mute');
           const link = a.url ? `<a class="link" href="${a.url}" target="_blank" rel="noopener">Άνοιγμα</a>` : '—';
           const tr = document.createElement('tr');
           tr.innerHTML = `
@@ -313,10 +297,10 @@
   $("#btnRefresh").addEventListener("click", loadAll);
   $("#btnLogout").addEventListener("click", async ()=>{
     await sb.auth.signOut();
-    location.href = "/members/login.html";
+    location.href = "/login.html";
   });
 
-  // ========= 5) STARTUP =========
+  // ========= 5) START =========
   loadAll();
 </script>
 </body>
