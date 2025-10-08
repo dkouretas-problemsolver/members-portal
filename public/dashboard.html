@@ -47,7 +47,7 @@
 
   <main>
     <section class="grid3">
-      <div class="card kpi"><h4>ΣΥΝΟΛΟ CREDITS</h4><div id="totalVal" class="val">—</div><div class="sub">Από το υπόλοιπο του λογαριασμού σου.</div></div>
+      <div class="card kpi"><h4>ΣΥΝΟΛΟ CREDITS</h4><div id="totalVal" class="val">—</div><div class="sub">Από το υπόλοιπο του λογαριασμού.</div></div>
       <div class="card kpi"><h4>ΔΕΣΜΕΥΜΕΝΑ</h4><div id="reservedVal" class="val">—</div><div id="nextExpiry" class="sub">Επόμ. λήξη: —</div></div>
       <div class="card kpi"><h4>ΔΙΑΘΕΣΙΜΑ</h4><div id="availableVal" class="val">—</div><div class="sub">= Σύνολο − Δεσμευμένα</div></div>
     </section>
@@ -83,71 +83,93 @@ const sb = window.supabase.createClient(
   { auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } }
 );
 
-const $ = id => document.getElementById(id);
-
-const fmtDate = iso => {
-  if (!iso) return '—';
-  try { return new Date(iso).toLocaleString('el-GR'); } catch { return iso; }
+const TBL = {
+  BALANCES:     'credit_balances',
+  RESERVATIONS: 'credit_reservations',
+  QUESTIONS:    'qa_questions',
+  ANSWERS:      'qa_answers',
+  V_HISTORY:    'v_qa_history',
+  V_RESERVED:   'v_reserved',
+};
+const COL = {
+  questionTitle: ['subject','title','question','topic'],
+  answerCredits: ['credits_change','credits_used','amount']
 };
 
+const $ = id => document.getElementById(id);
+const fmtDate = iso => iso ? new Date(iso).toLocaleString('el-GR') : '—';
 const asInt = v => Number.isFinite(v) ? v : (parseInt(v,10)||0);
 
-// ---------- Helpers: try schema('app') first, then public ----------
-async function sel(table, cols, match={}, order=null, limit=null) {
-  let q = sb.schema('app').from(table).select(cols);
-  Object.entries(match).forEach(([k,v])=> q = q.eq(k, v));
-  if (order) q = q.order(order.col, { ascending: order.asc });
-  if (limit) q = q.limit(limit);
-  let { data, error } = await q;
-  if (error) { // fallback to public
-    q = sb.from(table).select(cols);
-    Object.entries(match).forEach(([k,v])=> q = q.eq(k, v));
-    if (order) q = q.order(order.col, { ascending: order.asc });
-    if (limit) q = q.limit(limit);
-    ({ data, error } = await q);
+async function trySelect(schemaFirst, table, shapeFn) {
+  const q1 = shapeFn( sb.schema(schemaFirst ? 'app' : undefined).from(table) );
+  let { data, error } = await q1;
+  if (error) {
+    const q2 = shapeFn( sb.from(table) );
+    ({ data, error } = await q2);
     if (error) throw error;
   }
-  return data||[];
+  return data || [];
 }
-
+async function sel(table, cols, { match={}, order=null, limit=null, anyIn={} } = {}) {
+  const shape = (base) => {
+    let q = base.select(cols);
+    Object.entries(match).forEach(([k,v])=> q = q.eq(k, v));
+    Object.entries(anyIn).forEach(([k,arr])=> { if (Array.isArray(arr) && arr.length) q = q.in(k, arr); });
+    if (order) q = q.order(order.col, { ascending: !!order.asc });
+    if (limit) q = q.limit(limit);
+    return q;
+  };
+  return trySelect(true, table, shape);
+}
 async function single(table, cols, match) {
-  try {
-    const d = await sel(table, cols, match, null, 1);
-    return d[0]||null;
-  } catch { return null; }
+  const rows = await sel(table, cols, { match, limit:1 });
+  return rows[0] || null;
 }
+const firstNonEmpty = (obj, keys=[]) => {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== null && v !== undefined && String(v).trim() !== '') return v;
+  }
+  return null;
+};
 
 async function loadDashboard(){
   const { data: sess } = await sb.auth.getSession();
   const user = sess?.session?.user;
   if (!user) { location.replace('/'); return; }
 
-  // Στοιχεία πελάτη
+  // --- Στοιχεία πελάτη & emails
   const emails = [user.email].filter(Boolean);
   try {
-    const extra = await sel('user_emails','email',{ user_id: user.id });
+    const extra = await sel('user_emails','email',{ match:{ user_id: user.id }, limit:50 });
     extra.forEach(r => { if (r.email && !emails.includes(r.email)) emails.push(r.email); });
   } catch {}
   $('customerBox').innerHTML =
     `Email: <b>${user.email||'—'}</b> • User ID: <span class="mono">${user.id}</span>` +
     (emails.length>1 ? ` • Άλλα emails: <span class="mono">${emails.slice(1).join(', ')}</span>` : '');
 
-  // Σύνολο credits (credit_balances)
+  // --- Σύνολο credits
   let total = 0;
-  const balRow = await single('credit_balances','balance,user_id',{ user_id: user.id });
+  const balRow = await single(TBL.BALANCES,'balance,user_id',{ user_id: user.id });
   if (balRow && balRow.balance!=null) total = asInt(balRow.balance);
 
-  // Ενεργές δεσμεύσεις (credit_reservations ή reservations)
+  // --- Δεσμεύσεις (πρώτα view v_reserved, μετά πίνακας)
   let reservations = [];
   try {
-    reservations = await sel('credit_reservations','created_at,question_id,amount,status,expires_at',{ user_id: user.id }, {col:'created_at',asc:false}, 200);
+    reservations = await sel(TBL.V_RESERVED,'created_at,question_id,amount,credits_reserved,status,expires_at',{
+      match: { user_id: user.id },
+      order: { col:'created_at', asc:false },
+      limit: 200
+    });
   } catch {
-    try {
-      reservations = await sel('reservations','created_at,question_id,amount,status,expires_at',{ user_id: user.id }, {col:'created_at',asc:false}, 200);
-    } catch { reservations = []; }
+    reservations = await sel(TBL.RESERVATIONS,'created_at,question_id,amount,credits_reserved,status,expires_at',{
+      match: { user_id: user.id },
+      order: { col:'created_at', asc:false },
+      limit: 200
+    });
   }
 
-  // Ζωντανά fill του πίνακα
+  // Render reservations + KPIs reserved/available
   const tbody = $('resBody'); tbody.innerHTML = '';
   const nowISO = new Date().toISOString();
   let reservedSum = 0, nextExpiry = null;
@@ -170,32 +192,55 @@ async function loadDashboard(){
   else { $('resTable').style.display='none'; $('resEmpty').style.display='block'; }
 
   const available = Math.max(0, total - reservedSum);
-
-  // Render KPIs
   $('totalVal').textContent = total;
   $('reservedVal').textContent = reservedSum;
   $('availableVal').textContent = available;
   $('nextExpiry').textContent = 'Επόμ. λήξη: ' + (nextExpiry ? fmtDate(nextExpiry) : '—');
 
-  // Ιστορικό ερωτήσεων/απαντήσεων (best effort)
+  // --- Ιστορικό (πρώτα από v_qa_history, αλλιώς join)
+  const hb = $('histBody'); hb.innerHTML='';
   let hist = [];
   try {
-    // Προσπαθώ με questions/answers (προσαρμόζονται εύκολα)
-    const qs = await sel('ps_questions','id,created_at,subject,status,credits_used',{ user_id: user.id }, {col:'created_at',asc:false}, 50);
+    const rows = await sel(TBL.V_HISTORY,'created_at,question_id,title,status,credits',{
+      match: { user_id: user.id },
+      order: { col:'created_at', asc:false },
+      limit: 100
+    });
+    hist = rows;
+  } catch {
+    // fallback: από ερωτήσεις + τελευταία απάντηση
+    const qs = await sel(TBL.QUESTIONS,'id,created_at,user_id,subject,title,question,topic,status,credits_used',{
+      match: { user_id: user.id },
+      order: { col:'created_at', asc:false },
+      limit: 50
+    });
     const qIds = qs.map(q=>q.id);
-    let answersMap = {};
-    if (qIds.length){
-      const ans = await sel('ps_answers','id,question_id,status,credits_change',{},{col:'created_at',asc:false},200);
-      ans.forEach(a=>{ if(!answersMap[a.question_id]) answersMap[a.question_id]=[]; answersMap[a.question_id].push(a); });
+    let answersByQ = {};
+    if (qIds.length) {
+      const ans = await sel(TBL.ANSWERS,'id,question_id,created_at,updated_at,status,credits_change,credits_used,amount',{
+        anyIn: { question_id: qIds },
+        order: { col:'created_at', asc:false },
+        limit: 1000
+      });
+      ans.forEach(a=>{
+        const prev = answersByQ[a.question_id];
+        const curTs = new Date(a.updated_at || a.created_at || 0).getTime();
+        const prevTs = prev ? new Date(prev.updated_at || prev.created_at || 0).getTime() : -1;
+        if (!prev || curTs > prevTs) answersByQ[a.question_id] = a;
+      });
     }
-    hist = qs.map(q=>({
-      created_at:q.created_at, question_id:q.id,
-      title:q.subject||'—', status:q.status|| (answersMap[q.id]?.[0]?.status)||'—',
-      credits: asInt(q.credits_used ?? answersMap[q.id]?.[0]?.credits_change ?? 0)
-    }));
-  } catch {}
+    hist = qs.map(q=>{
+      const latestA = answersByQ[q.id];
+      const title = firstNonEmpty(q, COL.questionTitle) || '—';
+      const status = (q.status || latestA?.status || '—');
+      const credits = asInt(
+        firstNonEmpty(latestA || {}, COL.answerCredits) ??
+        q.credits_used ?? 0
+      );
+      return { created_at:q.created_at, question_id:q.id, title, status, credits };
+    });
+  }
 
-  const hb = $('histBody'); hb.innerHTML='';
   if (hist.length){
     hist.forEach(r=>{
       const tr=document.createElement('tr');
