@@ -15,13 +15,13 @@
     /* Top logo bar */
     .topbar{padding:12px 0;border-bottom:1px solid #eee;background:#fff;position:sticky;top:0;z-index:20}
     .topbar .logo{display:flex;align-items:center;justify-content:center;gap:12px;font-weight:800}
-    .topbar img{width:64px;height:64px;border-radius:10px} /* <-- άλλαξέ το σε 80px αν θες πιο μεγάλο */
+    .topbar img{width:96px;height:96px;border-radius:12px} /* <-- αλλάζεις π.χ. 80px αν το θες μικρότερο */
     .subbar{display:flex;justify-content:flex-end;gap:8px;padding:8px 16px;border-top:1px solid #f2f2f2;background:#fff}
 
-    .btn{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600}
-    .btn:hover{background:#fafafa}
+    .btn{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600;height:38px;line-height:22px}
     .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
     .btn.brand:hover{filter:brightness(.98)}
+    .btn:hover{background:#fafafa}
 
     .container{max-width:1100px;margin:18px auto;padding:0 14px}
     .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
@@ -44,13 +44,19 @@
     .account{display:grid;grid-template-columns:120px 1fr;row-gap:8px;column-gap:8px}
     .account .label{color:#6b7280}
     .account-section{
-      margin-top:22px;               /* <-- περισσότερο κενό από πάνω */
-      padding-top:14px;
-      border-top:3px solid rgba(255,107,0,.28); /* λεπτό πορτοκαλί διαχωριστικό */
+      margin-top:28px;
+      padding-top:16px;
+      border-top:3px solid rgba(255,107,0,.28);
     }
-    .form-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:8px}
+    .form-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
     .input{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px}
+
     .inv-only{display:none}
+
+    /* Answers clamp */
+    .answer-text{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+    .answer-text.open{-webkit-line-clamp:unset}
+    .show-more{border:none;background:none;color:#FF6B00;cursor:pointer;font-weight:600;padding:0;margin-top:4px}
   </style>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -64,7 +70,7 @@
       <div>ProblemSolver • Μέλη</div>
     </div>
     <div class="subbar">
-      <button id="btnRefresh" class="btn brand">Ανανέωση</button>
+      <!-- Ζητήθηκε να αφαιρεθεί το κουμπί Ανανέωση -->
       <button id="btnSignOut" class="btn">Αποσύνδεση</button>
     </div>
   </div>
@@ -85,17 +91,8 @@
         <h4>Επόμενη Λήξη</h4><div id="nextExpiry" class="value">—</div>
       </div>
 
-      <!-- Ιστορικό Ερωτήσεων -->
+      <!-- ΑΡΙΣΤΕΡΑ: Λογαριασμός + Στοιχεία Πελάτη + Κρατήσεις -->
       <div class="card" style="grid-column: span 7;">
-        <div class="section-title">Ιστορικό Ερωτήσεων</div>
-        <table id="tblQuestions">
-          <thead><tr><th>Ημερομηνία</th><th>Θέμα/Ερώτηση</th><th>Status</th></tr></thead>
-          <tbody id="tbodyQuestions"><tr><td class="muted" colspan="3">—</td></tr></tbody>
-        </table>
-      </div>
-
-      <!-- Λογαριασμός + editable Στοιχεία Πελάτη -->
-      <div class="card" style="grid-column: span 5;">
         <div class="section-title">Λογαριασμός</div>
         <div class="account">
           <div class="label">Όνομα:</div> <div id="accName">—</div>
@@ -128,19 +125,19 @@
               <div class="muted">ΔΟΥ</div>
               <input id="bill_tax_office" class="input" placeholder="ΔΟΥ">
             </div>
-            <div class="inv-only" style="grid-column:span 8">
+            <div class="inv-only" style="grid-column:span 12">
               <div class="muted">Διεύθυνση</div>
               <input id="bill_address" class="input" placeholder="Οδός & αριθμός">
             </div>
-            <div class="inv-only" style="grid-column:span 4">
+            <div class="inv-only" style="grid-column:span 6">
               <div class="muted">Πόλη</div>
               <input id="bill_city" class="input" placeholder="Πόλη">
             </div>
-            <div class="inv-only" style="grid-column:span 4">
+            <div class="inv-only" style="grid-column:span 3">
               <div class="muted">Τ.Κ.</div>
               <input id="bill_zip" class="input" placeholder="Τ.Κ.">
             </div>
-            <div class="inv-only" style="grid-column:span 4">
+            <div class="inv-only" style="grid-column:span 3">
               <div class="muted">Χώρα</div>
               <input id="bill_country" class="input" placeholder="Χώρα">
             </div>
@@ -164,13 +161,21 @@
 
         <div class="section-title" style="margin-top:18px;">Κρατήσεις (Active)</div>
         <table id="tblRes">
-          <!-- ΧΩΡΙΣ Link -->
           <thead><tr><th>Ημερομηνία</th><th>Ποσό</th><th>Κατάσταση</th><th>Λήξη</th></tr></thead>
           <tbody id="tbodyRes"><tr><td class="muted" colspan="4">—</td></tr></tbody>
         </table>
       </div>
 
-      <!-- Απαντήσεις (ΧΩΡΙΣ Status) -->
+      <!-- ΔΕΞΙΑ: Ιστορικό Ερωτήσεων -->
+      <div class="card" style="grid-column: span 5;">
+        <div class="section-title">Ιστορικό Ερωτήσεων</div>
+        <table id="tblQuestions">
+          <thead><tr><th>Ημερομηνία</th><th>Θέμα/Ερώτηση</th><th>Status</th></tr></thead>
+          <tbody id="tbodyQuestions"><tr><td class="muted" colspan="3">—</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- Απαντήσεις: χωρίς Status + clamp 3 γραμμές -->
       <div class="card" style="grid-column: span 12;">
         <div class="section-title">Απαντήσεις</div>
         <table id="tblAnswers">
@@ -209,10 +214,10 @@
         reserved = active.reduce((s,r)=>s+((r.credits_reserved ?? r.amount ?? 0)|0),0);
         active.forEach(r=>{ if(r.expires_at){ const d=new Date(r.expires_at); if(!nextExpiry||d<nextExpiry) nextExpiry=d; }});
       }catch(e){ console.warn('credit_reservations', e); }
-      $('#totalCredits').textContent = total;
-      $('#reservedCredits').textContent = reserved;
-      $('#availableCredits').textContent = Math.max(0,total-reserved);
-      $('#nextExpiry').textContent = nextExpiry ? nextExpiry.toLocaleDateString('el-GR') : '—';
+        $('#totalCredits').textContent = total;
+        $('#reservedCredits').textContent = reserved;
+        $('#availableCredits').textContent = Math.max(0,total-reserved);
+        $('#nextExpiry').textContent = nextExpiry ? nextExpiry.toLocaleDateString('el-GR') : '—';
     }
 
     /* ===== Q&A ===== */
@@ -245,13 +250,25 @@
         for(const a of list){
           const txt=(a.answer && a.answer.trim().length)?a.answer:(a.agent_draft||'—');
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td>${fmt(a.updated_at||a.created_at)}</td><td>${txt}</td>`;
+          tr.innerHTML=`
+            <td>${fmt(a.updated_at||a.created_at)}</td>
+            <td>
+              <div class="answer-text">${txt}</div>
+              <button class="show-more">Περισσότερα</button>
+            </td>`;
           tb.appendChild(tr);
         }
       }catch(e){ console.error('loadAnswers',e); $('#tbodyAnswers').innerHTML='<tr><td class="muted" colspan="2">—</td></tr>'; }
     }
+    document.addEventListener('click',(e)=>{
+      if(e.target && e.target.classList.contains('show-more')){
+        const box = e.target.previousElementSibling;
+        const open = box.classList.toggle('open');
+        e.target.textContent = open ? 'Λιγότερα' : 'Περισσότερα';
+      }
+    });
 
-    /* ===== Reservations (χωρίς link) ===== */
+    /* ===== Reservations ===== */
     async function loadReservations(){
       try{
         const { data, error } = await supabase.from('credit_reservations')
@@ -333,7 +350,6 @@
 
     document.addEventListener('change',(e)=>{ if(e.target && e.target.id==='bill_doc_type') toggleInvoiceFields(); });
     document.getElementById('btnSaveBilling').addEventListener('click', async ()=>{ const u = await requireUser(); if(u) saveBilling(u); });
-    document.getElementById('btnRefresh').addEventListener('click', Boot);
     document.getElementById('btnSignOut').addEventListener('click', async ()=>{ await supabase.auth.signOut(); location.href='/login.html'; });
 
     Boot();
