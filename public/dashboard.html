@@ -79,7 +79,7 @@
 
   <!-- Actions -->
   <div class="subbar">
-    <a class="btn" href="https://www.problemsolver.gr/question" target="_blank" rel="noopener">Κάνε την ερώτησή σου</a>
+    <a id="askBtn" class="btn" href="https://www.problemsolver.gr/question" target="_blank" rel="noopener">Κάνε την ερώτησή σου</a>
     <a class="btn brand" href="https://www.problemsolver.gr/buy-credits" target="_blank" rel="noopener">Αγόρασε Credits</a>
     <button id="btnSignOut" class="btn">Αποσύνδεση</button>
   </div>
@@ -178,7 +178,7 @@
         <div class="section-title">Απαντήσεις</div>
         <table id="tblAnswers">
           <thead><tr><th>Ημερομηνία</th><th>Απάντηση</th></tr></thead>
-        <tbody id="tbodyAnswers"><tr><td class="muted" colspan="2">—</td></tr></tbody>
+          <tbody id="tbodyAnswers"><tr><td class="muted" colspan="2">—</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -336,6 +336,34 @@
     document.getElementById('btnSignOut').addEventListener('click', async ()=>{ await supabase.auth.signOut(); location.href='/login.html'; });
 
     Boot();
+  </script>
+
+  <!-- === ΝΕΟ: Cookie prefill για /question === -->
+  <script>
+    function toNames(fullName='') {
+      const parts = fullName.trim().split(/\s+/);
+      return { first: (parts[0]||''), last: (parts.slice(1).join(' ')||'') };
+    }
+    function setPrefillCookie(data){
+      const payload = btoa(JSON.stringify({
+        firstName: data.firstName || '',
+        lastName:  data.lastName  || '',
+        email:     data.email     || ''
+      }));
+      const maxAge = 60 * 10; // 10 λεπτά
+      document.cookie = `ps_prefill=${payload}; Max-Age=${maxAge}; Path=/; Domain=.problemsolver.gr; Secure; SameSite=Lax`;
+    }
+    document.getElementById('askBtn')?.addEventListener('click', function(e){
+      e.preventDefault();
+      const fullName = document.getElementById('bill_name')?.value?.trim()
+                      || document.getElementById('accName')?.textContent?.trim()
+                      || '';
+      const email1 = document.getElementById('bill_email')?.value?.trim() || '';
+      const email2 = document.getElementById('accEmail')?.textContent?.trim() || '';
+      const { first, last } = toNames(fullName);
+      setPrefillCookie({ firstName:first, lastName:last, email:(email1||email2) });
+      window.open(this.href, '_blank'); // νέο tab όπως πριν
+    });
   </script>
 </body>
 </html>
