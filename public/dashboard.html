@@ -11,12 +11,18 @@
     :root{--brand:#FF6B00;--muted:#6b7280;--ok:#16a34a;--bg:#f6f7f9}
     *{box-sizing:border-box}
     body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:#111}
-    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:10}
-    header .brand{display:flex;align-items:center;gap:12px;font-weight:700}
-    header .brand img{width:32px;height:32px;border-radius:8px}
-    header .actions{display:flex;gap:8px}
+
+    /* Top logo bar */
+    .topbar{padding:12px 0;border-bottom:1px solid #eee;background:#fff;position:sticky;top:0;z-index:20}
+    .topbar .logo{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800}
+    .topbar img{width:34px;height:34px;border-radius:8px}
+    .subbar{display:flex;justify-content:flex-end;gap:8px;padding:8px 16px;border-top:1px solid #f2f2f2;background:#fff}
+
     .btn{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600}
     .btn:hover{background:#fafafa}
+    .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
+    .btn.brand:hover{filter:brightness(.98)}
+
     .container{max-width:1100px;margin:18px auto;padding:0 14px}
     .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
     .card{background:#fff;border:1px solid #eee;border-radius:14px;padding:14px}
@@ -24,6 +30,7 @@
     .kpi h4{margin:0 0 8px 0;font-size:14px;color:var(--muted);font-weight:600}
     .kpi .value{min-height:28px;font-size:22px;font-weight:700;letter-spacing:0.2px}
     .section-title{font-weight:700;margin:6px 0 12px 0;color:#111}
+
     table{width:100%;border-collapse:collapse}
     th,td{padding:10px 8px;border-bottom:1px solid #eee;font-size:14px}
     th{color:#374151;text-align:left}
@@ -32,24 +39,31 @@
     .pill{display:inline-block;padding:3px 8px;border-radius:999px;background:#f3f4f6;color:#374151;font-size:12px;font-weight:600}
     .pill.ok{background:#e8f7ec;color:#067647}
     .pill.warn{background:#fff4e5;color:#92400e}
-    /* account */
+
+    /* Account + editable billing */
     .account{display:grid;grid-template-columns:120px 1fr;row-gap:8px;column-gap:8px}
     .account .label{color:#6b7280}
     .account-section{margin-top:14px;padding-top:10px;border-top:2px solid rgba(255,107,0,.25)}
+    .form-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:8px}
+    .input{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px}
+    .inv-only{display:none}
   </style>
+
   <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 </head>
 <body>
-  <header>
-    <div class="brand">
+
+  <!-- Logo centered -->
+  <div class="topbar">
+    <div class="logo">
       <img src="https://raw.githubusercontent.com/dkouretas-problemsolver/members-portal/main/public/brandmark-design-1080x1080.png" alt="ProblemSolver">
-      ProblemSolver • Μέλη
+      <div>ProblemSolver • Μέλη</div>
     </div>
-    <div class="actions">
-      <button id="btnRefresh" class="btn">Ανανέωση</button>
+    <div class="subbar">
+      <button id="btnRefresh" class="btn brand">Ανανέωση</button>
       <button id="btnSignOut" class="btn">Αποσύνδεση</button>
     </div>
-  </header>
+  </div>
 
   <div class="container">
     <div class="grid">
@@ -76,7 +90,7 @@
         </table>
       </div>
 
-      <!-- Λογαριασμός + Στοιχεία Πελάτη -->
+      <!-- Λογαριασμός + editable Στοιχεία Πελάτη -->
       <div class="card" style="grid-column: span 5;">
         <div class="section-title">Λογαριασμός</div>
         <div class="account">
@@ -86,23 +100,67 @@
         </div>
 
         <div class="account-section">
-          <div class="section-title" style="margin:0 0 8px">Στοιχεία Πελάτη</div>
-          <div class="account">
-            <div class="label">Τύπος:</div>         <div id="billDocType">—</div>
-            <div class="label">ΑΦΜ:</div>           <div id="billVat" class="mono">—</div>
-            <div class="label">ΔΟΥ:</div>           <div id="billTaxOffice">—</div>
-            <div class="label">Διεύθυνση:</div>     <div id="billAddress">—</div>
-            <div class="label">Πόλη:</div>          <div id="billCity">—</div>
-            <div class="label">Τ.Κ.:</div>          <div id="billZip">—</div>
-            <div class="label">Χώρα:</div>          <div id="billCountry">—</div>
-            <div class="label">Τηλέφωνο:</div>      <div id="billPhone">—</div>
-            <div class="label">Email τιμολ.:</div>  <div id="billEmail" class="mono">—</div>
+          <div class="section-title" style="margin:0 0 8px">Στοιχεία Πελάτη (Επεξεργάσιμα)</div>
+
+          <div class="form-grid">
+            <div style="grid-column:span 4">
+              <div class="muted">Τύπος</div>
+              <select id="bill_doc_type" class="input">
+                <option value="receipt">Απόδειξη</option>
+                <option value="invoice">Τιμολόγιο</option>
+              </select>
+            </div>
+            <div style="grid-column:span 8">
+              <div class="muted">Ονοματεπώνυμο / Επωνυμία</div>
+              <input id="bill_name" class="input" placeholder="Πλήρες όνομα ή επωνυμία">
+            </div>
+
+            <!-- Invoice-only -->
+            <div class="inv-only" style="grid-column:span 4">
+              <div class="muted">ΑΦΜ</div>
+              <input id="bill_vat" class="input" placeholder="ΑΦΜ">
+            </div>
+            <div class="inv-only" style="grid-column:span 4">
+              <div class="muted">ΔΟΥ</div>
+              <input id="bill_tax_office" class="input" placeholder="ΔΟΥ">
+            </div>
+            <div class="inv-only" style="grid-column:span 8">
+              <div class="muted">Διεύθυνση</div>
+              <input id="bill_address" class="input" placeholder="Οδός & αριθμός">
+            </div>
+            <div class="inv-only" style="grid-column:span 4">
+              <div class="muted">Πόλη</div>
+              <input id="bill_city" class="input" placeholder="Πόλη">
+            </div>
+            <div class="inv-only" style="grid-column:span 4">
+              <div class="muted">Τ.Κ.</div>
+              <input id="bill_zip" class="input" placeholder="Τ.Κ.">
+            </div>
+            <div class="inv-only" style="grid-column:span 4">
+              <div class="muted">Χώρα</div>
+              <input id="bill_country" class="input" placeholder="Χώρα">
+            </div>
+
+            <!-- Common -->
+            <div style="grid-column:span 6">
+              <div class="muted">Τηλέφωνο</div>
+              <input id="bill_phone" class="input" placeholder="τηλέφωνο">
+            </div>
+            <div style="grid-column:span 6">
+              <div class="muted">Email τιμολόγησης</div>
+              <input id="bill_email" class="input" placeholder="email για παραστατικό">
+            </div>
+          </div>
+
+          <div class="muted" id="bill_msg" style="margin-top:8px"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px">
+            <button id="btnSaveBilling" class="btn brand">Αποθήκευση</button>
           </div>
         </div>
 
         <div class="section-title" style="margin-top:14px;">Κρατήσεις (Active)</div>
         <table id="tblRes">
-          <!-- ΑΦΑΙΡΕΘΗΚΕ η στήλη Link -->
+          <!-- ΧΩΡΙΣ Link -->
           <thead><tr><th>Ημερομηνία</th><th>Ποσό</th><th>Κατάσταση</th><th>Λήξη</th></tr></thead>
           <tbody id="tbodyRes"><tr><td class="muted" colspan="4">—</td></tr></tbody>
         </table>
@@ -122,22 +180,17 @@
   </div>
 
   <script>
-    // === CONFIG (ίδιο με το αρχικό σου) ===
+    /* === SUPABASE CONFIG (ίδια με το αρχικό σου) === */
     const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{persistSession:true}, db:{schema:'app'} });
 
-    const $ = sel => document.querySelector(sel);
+    const $ = (s)=>document.querySelector(s);
     const fmt = iso => { if(!iso) return '—'; const d=new Date(iso); return isNaN(d)?'—':d.toLocaleString('el-GR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
 
-    async function requireUser(){
-      const { data:{ user }, error } = await supabase.auth.getUser();
-      if(error){ console.error(error); return null; }
-      if(!user){ location.href='/login.html'; return null; }
-      return user;
-    }
+    async function requireUser(){ const {data:{user}}=await supabase.auth.getUser(); if(!user){location.href='/login.html';return null;} return user; }
 
-    /* KPIs (όπως είχες) */
+    /* ===== KPIs (όπως ήταν) ===== */
     async function loadBalances(){
       let total=0,reserved=0,nextExpiry=null;
       try{
@@ -145,11 +198,12 @@
         if(error) throw error; total = (data?.balance ?? 0)|0;
       }catch(e){ console.error('credit_balances', e); }
       try{
-        const { data, error } = await supabase.from('credit_reservations').select('amount,credits_reserved,status,expires_at,created_at').eq('status','active');
+        const { data, error } = await supabase.from('credit_reservations')
+          .select('amount,credits_reserved,status,expires_at,created_at').eq('status','active');
         if(error) throw error;
         const now=new Date(); const active=(data||[]).filter(r=>r.status==='active' && (!r.expires_at || new Date(r.expires_at)>now));
         reserved = active.reduce((s,r)=>s+((r.credits_reserved ?? r.amount ?? 0)|0),0);
-        active.forEach(r=>{ if(r.expires_at){ const d=new Date(r.expires_at); if(!nextExpiry||d<nextExpiry) nextExpiry=d; } });
+        active.forEach(r=>{ if(r.expires_at){ const d=new Date(r.expires_at); if(!nextExpiry||d<nextExpiry) nextExpiry=d; }});
       }catch(e){ console.warn('credit_reservations', e); }
       $('#totalCredits').textContent = total;
       $('#reservedCredits').textContent = reserved;
@@ -157,7 +211,7 @@
       $('#nextExpiry').textContent = nextExpiry ? nextExpiry.toLocaleDateString('el-GR') : '—';
     }
 
-    /* Q&A */
+    /* ===== Q&A ===== */
     async function fetchMyQaAnswers(user){
       const { data, error } = await supabase.from('qa_answers')
         .select('id,created_at,updated_at,email,status,question,answer,agent_draft,user_id')
@@ -185,7 +239,7 @@
         const tb = $('#tbodyAnswers'); tb.innerHTML='';
         if(!list.length){ tb.innerHTML='<tr><td class="muted" colspan="3">—</td></tr>'; return; }
         for(const a of list){
-          const txt = (a.answer && a.answer.trim().length)?a.answer:(a.agent_draft||'—');
+          const txt=(a.answer && a.answer.trim().length)?a.answer:(a.agent_draft||'—');
           const tr=document.createElement('tr');
           tr.innerHTML=`<td>${fmt(a.updated_at||a.created_at)}</td><td>${txt}</td><td><span class="pill">${a.status||'—'}</span></td>`;
           tb.appendChild(tr);
@@ -193,12 +247,12 @@
       }catch(e){ console.error('loadAnswers',e); $('#tbodyAnswers').innerHTML='<tr><td class="muted" colspan="3">—</td></tr>'; }
     }
 
-    /* Reservations (ΧΩΡΙΣ Link) */
+    /* ===== Reservations (χωρίς link) ===== */
     async function loadReservations(){
       try{
         const { data, error } = await supabase.from('credit_reservations')
-          .select('amount,credits_reserved,status,created_at,expires_at').eq('status','active')
-          .order('created_at',{ascending:false}).limit(50);
+          .select('amount,credits_reserved,status,created_at,expires_at')
+          .eq('status','active').order('created_at',{ascending:false}).limit(50);
         if(error) throw error;
         const tb=$('#tbodyRes'); tb.innerHTML='';
         if(!data?.length){ tb.innerHTML='<tr><td class="muted" colspan="4">—</td></tr>'; return; }
@@ -211,45 +265,77 @@
       }catch(e){ console.warn('loadReservations',e); $('#tbodyRes').innerHTML='<tr><td class="muted" colspan="4">—</td></tr>'; }
     }
 
-    /* Account + BILLING INFO από app.user_billing */
-    async function loadAccountBlock(user){
+    /* ===== Editable Στοιχεία Πελάτη (user_billing) ===== */
+    function toggleInvoiceFields(){
+      const isInv = $('#bill_doc_type').value==='invoice';
+      document.querySelectorAll('.inv-only').forEach(el=>el.style.display = isInv?'block':'none');
+    }
+    async function loadBilling(user){
+      try{
+        const { data, error } = await supabase.from('user_billing')
+          .select('name,vat,tax_office,email,address,zip,city,country,phone,doc_type')
+          .eq('user_id', user.id).maybeSingle();
+        if(error) throw error;
+        const v=data||{};
+        $('#bill_name').value = v.name||'';
+        $('#bill_vat').value = v.vat||'';
+        $('#bill_tax_office').value = v.tax_office||'';
+        $('#bill_email').value = v.email || user.email || '';
+        $('#bill_address').value = v.address||'';
+        $('#bill_zip').value = v.zip||'';
+        $('#bill_city').value = v.city||'';
+        $('#bill_country').value = v.country||'';
+        $('#bill_phone').value = v.phone||'';
+        $('#bill_doc_type').value = v.doc_type || 'receipt';
+        toggleInvoiceFields();
+      }catch(e){ console.warn('loadBilling', e); }
+    }
+    async function saveBilling(user){
+      const rec = {
+        user_id: user.id,
+        name: $('#bill_name').value.trim()||null,
+        vat: $('#bill_vat').value.trim()||null,
+        tax_office: $('#bill_tax_office').value.trim()||null,
+        email: $('#bill_email').value.trim()||user.email,
+        address: $('#bill_address').value.trim()||null,
+        zip: $('#bill_zip').value.trim()||null,
+        city: $('#bill_city').value.trim()||null,
+        country: $('#bill_country').value.trim()||null,
+        phone: $('#bill_phone').value.trim()||null,
+        doc_type: $('#bill_doc_type').value||'receipt',
+        updated_at: new Date().toISOString()
+      };
+      try{
+        const { error } = await supabase.from('user_billing').upsert(rec,{ onConflict:'user_id' });
+        if(error) throw error;
+        $('#bill_msg').textContent='Αποθηκεύτηκαν.';
+        setTimeout(()=>$('#bill_msg').textContent='',2000);
+      }catch(e){
+        $('#bill_msg').textContent='Σφάλμα: '+(e.message||e);
+      }
+    }
+
+    /* ===== Boot & Events ===== */
+    async function Boot(){
+      const user = await requireUser(); if(!user) return;
+      // Header account bits
       $('#accEmail').textContent = user.email || '—';
       $('#accUser').textContent  = user.id || '—';
       $('#accName').textContent  = user.user_metadata?.name || '—';
 
-      try{
-        const { data, error } = await supabase.from('user_billing')
-          .select('doc_type,vat,tax_office,address,city,zip,country,phone,email')
-          .eq('user_id', user.id).maybeSingle();
-        if(error) throw error;
-        const v = data || {};
-        $('#billDocType').textContent = v.doc_type==='invoice'?'Τιμολόγιο':'Απόδειξη';
-        $('#billVat').textContent = v.vat || '—';
-        $('#billTaxOffice').textContent = v.tax_office || '—';
-        $('#billAddress').textContent = v.address || '—';
-        $('#billCity').textContent = v.city || '—';
-        $('#billZip').textContent = v.zip || '—';
-        $('#billCountry').textContent = v.country || '—';
-        $('#billPhone').textContent = v.phone || '—';
-        $('#billEmail').textContent = v.email || user.email || '—';
-      }catch(e){
-        console.warn('user_billing', e);
-      }
-    }
-
-    async function boot(){
-      const user = await requireUser(); if(!user) return;
-      await loadAccountBlock(user);
+      await loadBilling(user);
       await loadBalances();
       await loadQuestions(user);
       await loadAnswers(user);
       await loadReservations();
     }
 
-    document.getElementById('btnRefresh').addEventListener('click', boot);
+    document.addEventListener('change',(e)=>{ if(e.target && e.target.id==='bill_doc_type') toggleInvoiceFields(); });
+    document.getElementById('btnSaveBilling').addEventListener('click', async ()=>{ const u = await requireUser(); if(u) saveBilling(u); });
+    document.getElementById('btnRefresh').addEventListener('click', Boot);
     document.getElementById('btnSignOut').addEventListener('click', async ()=>{ await supabase.auth.signOut(); location.href='/login.html'; });
 
-    boot();
+    Boot();
   </script>
 </body>
 </html>
