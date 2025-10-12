@@ -338,12 +338,8 @@
     Boot();
   </script>
 
-  <!-- === ΝΕΟ: Cookie prefill για /question === -->
+  <!-- === Cookie prefill για /question (χωρίς preventDefault) === -->
   <script>
-    function toNames(fullName='') {
-      const parts = fullName.trim().split(/\s+/);
-      return { first: (parts[0]||''), last: (parts.slice(1).join(' ')||'') };
-    }
     function setPrefillCookie(data){
       const payload = btoa(JSON.stringify({
         firstName: data.firstName || '',
@@ -353,17 +349,24 @@
       const maxAge = 60 * 10; // 10 λεπτά
       document.cookie = `ps_prefill=${payload}; Max-Age=${maxAge}; Path=/; Domain=.problemsolver.gr; Secure; SameSite=Lax`;
     }
-    document.getElementById('askBtn')?.addEventListener('click', function(e){
-      e.preventDefault();
+    function splitNames(fullName=''){
+      const parts = (fullName||'').trim().split(/\s+/);
+      return { first: parts[0]||'', last: parts.slice(1).join(' ')||'' };
+    }
+    const askEl = document.getElementById('askBtn');
+    function handleAsk(){
       const fullName = document.getElementById('bill_name')?.value?.trim()
                       || document.getElementById('accName')?.textContent?.trim()
                       || '';
       const email1 = document.getElementById('bill_email')?.value?.trim() || '';
       const email2 = document.getElementById('accEmail')?.textContent?.trim() || '';
-      const { first, last } = toNames(fullName);
+      const { first, last } = splitNames(fullName);
       setPrefillCookie({ firstName:first, lastName:last, email:(email1||email2) });
-      window.open(this.href, '_blank'); // νέο tab όπως πριν
-    });
+      // δεν κάνουμε preventDefault — αφήνουμε το link να ανοίξει κανονικά (target=_blank)
+    }
+    askEl?.addEventListener('click', handleAsk);
+    // υποστήριξη για μεσαίο κλικ (mouse button 1)
+    askEl?.addEventListener('auxclick', (e)=>{ if(e.button===1) handleAsk(); });
   </script>
 </body>
 </html>
