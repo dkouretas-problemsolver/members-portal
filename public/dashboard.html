@@ -7,18 +7,15 @@
   <style>
     :root{--brand:#FF6B00;--muted:#6b7280;--ok:#16a34a;--bg:#f6f7f9;--danger:#dc2626}
     *{box-sizing:border-box}html,body{height:100%}
-    body{margin:0;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:#111}
+    body{margin:0;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:#111}
     .wrap{max-width:1160px;margin:0 auto;padding:18px}
     header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
     header .brand{display:flex;align-items:center;font-weight:700}
-    header .brand .dot{width:12px;height:12px;background:var(--brand);border-radius:50%;box-shadow:0 0 0 3px rgba(255,107,0,.12)}
-    header .brand span{margin-left:8px}
     .right{margin-left:auto}
     .btn{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600;transition:.15s}
     .btn:hover{background:#fafafa}
     .btn.brand{background:var(--brand);color:#fff;border-color:var(--brand)}
     .btn.brand:hover{filter:brightness(.98)}
-    .inv-only{display:none}
 
     .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
     .kpi{background:#fff;border-radius:14px;padding:14px;border:1px solid #eee}
@@ -38,47 +35,43 @@
     .section-title{font-weight:800;margin-bottom:8px}
     a{color:#111;text-decoration:underline;text-decoration-color:#e5e7eb}
     a:hover{text-decoration-color:#111}
+
+    /* Modal */
+    #billingModal{position:fixed;inset:0;display:none;background:rgba(0,0,0,.35);z-index:50}
+    #billingSheet{max-width:720px;margin:8vh auto;background:#fff;border-radius:14px;border:1px solid #eee;padding:16px}
+    .inv-only{display:none}
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <div class="brand"><img src="https://raw.githubusercontent.com/dkouretas-problemsolver/members-portal/main/public/brandmark-design-1080x1080.png" alt="ProblemSolver" style="width:22px;height:22px;border-radius:6px;margin-right:8px;vertical-align:-3px"> ProblemSolver • Μέλη</div>
-      <div class="right">
+      <div class="brand">
+        <img src="https://raw.githubusercontent.com/dkouretas-problemsolver/members-portal/main/public/brandmark-design-1080x1080.png"
+             alt="ProblemSolver" style="width:28px;height:28px;border-radius:6px;margin-right:10px;vertical-align:-5px">
+        ProblemSolver • Μέλη
+      </div>
+      <div class="right" style="display:flex;gap:8px">
+        <button id="btnBilling" class="btn brand">Στοιχεία Παραστατικού</button>
         <button id="btnRefresh" class="btn brand">Ανανέωση</button>
         <button id="btnLogout" class="btn">Αποσύνδεση</button>
       </div>
     </header>
 
+    <!-- KPIs -->
     <div class="grid" id="kpis">
-      <div class="kpi" style="grid-column: span 3">
-        <div class="title">Σύνολο Credits</div>
-        <div class="value" id="kpi_total">—</div>
-      </div>
-      <div class="kpi" style="grid-column: span 3">
-        <div class="title">Δεσμευμένα</div>
-        <div class="value" id="kpi_reserved">—</div>
-      </div>
-      <div class="kpi" style="grid-column: span 3">
-        <div class="title">Διαθέσιμα</div>
-        <div class="value" id="kpi_available">—</div>
-      </div>
-      <div class="kpi" style="grid-column: span 3">
-        <div class="title">Επόμενη Λήξη</div>
-        <div class="value" id="kpi_next_expiry">—</div>
-      </div>
+      <div class="kpi" style="grid-column: span 3"><div class="title">Σύνολο Credits</div><div class="value" id="kpi_total">—</div></div>
+      <div class="kpi" style="grid-column: span 3"><div class="title">Δεσμευμένα</div><div class="value" id="kpi_reserved">—</div></div>
+      <div class="kpi" style="grid-column: span 3"><div class="title">Διαθέσιμα</div><div class="value" id="kpi_available">—</div></div>
+      <div class="kpi" style="grid-column: span 3"><div class="title">Επόμενη Λήξη</div><div class="value" id="kpi_next_expiry">—</div></div>
     </div>
 
+    <!-- Ιστορικό + Λογαριασμός -->
     <div class="grid" style="margin-top:12px">
       <div class="card" style="grid-column: span 8">
         <div class="section-title">Ιστορικό Ερωτήσεων</div>
         <table id="tblQuestions">
-          <thead>
-            <tr><th>Ημερομηνία</th><th>Θέμα/Ερώτηση</th><th>Status</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>—</td><td>—</td><td>—</td></tr>
-          </tbody>
+          <thead><tr><th>Ημερομηνία</th><th>Θέμα/Ερώτηση</th><th>Status</th></tr></thead>
+          <tbody><tr><td>—</td><td>—</td><td>—</td></tr></tbody>
         </table>
       </div>
 
@@ -93,259 +86,189 @@
 
         <div class="section-title" style="margin-top:12px">Κρατήσεις (Active)</div>
         <table id="tblResv">
-          <thead>
-            <tr><th>Ημερομηνία</th><th>Ποσό</th><th>Κατάσταση</th><th>Λήξη</th><th>Link</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>—</td><td>—</td><td>—</td><td>—</td><td class="right">—</td></tr>
-          </tbody>
+          <thead><tr><th>Ημερομηνία</th><th>Ποσό</th><th>Κατάσταση</th><th>Λήξη</th><th>Link</th></tr></thead>
+          <tbody><tr><td>—</td><td>—</td><td>—</td><td>—</td><td class="right">—</td></tr></tbody>
         </table>
       </div>
 
       <div class="card" style="grid-column: span 12">
         <div class="section-title">Απαντήσεις</div>
         <table id="tblAnswers">
-          <thead>
-            <tr><th>Ημερομηνία</th><th>Απάντηση / Πρόχειρο</th><th>Status</th><th>Link</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>—</td><td>—</td><td>—</td><td class="right">—</td></tr>
-          </tbody>
+          <thead><tr><th>Ημερομηνία</th><th>Απάντηση / Πρόχειρο</th><th>Status</th><th>Link</th></tr></thead>
+          <tbody><tr><td>—</td><td>—</td><td>—</td><td class="right">—</td></tr></tbody>
         </table>
-      </div>
-
-      <!-- Τιμολόγηση (Invoice Details) -->
-      <div class="card" style="grid-column: span 12;">
-        <div class="section-title">Στοιχεία Παραστατικού</div>
-        <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:10px">
-          <div style="grid-column:span 2">
-            <div class="muted">Τύπος</div>
-            <select id="bill_doc_type" class="btn" style="width:100%">
-              <option value="receipt">Απόδειξη</option>
-              <option value="invoice">Τιμολόγιο</option>
-            </select>
-          </div>
-
-          <!-- Κοινά πεδία -->
-          <div style="grid-column:span 4">
-            <div class="muted">Ονοματεπώνυμο / Επωνυμία</div>
-            <input id="bill_name" class="btn" style="width:100%" placeholder="Πλήρες όνομα ή επωνυμία"/>
-          </div>
-          <div style="grid-column:span 3">
-            <div class="muted">Email τιμολόγησης</div>
-            <input id="bill_email" class="btn" style="width:100%" placeholder="email για παραστατικό"/>
-          </div>
-          <div style="grid-column:span 3">
-            <div class="muted">Τηλέφωνο</div>
-            <input id="bill_phone" class="btn" style="width:100%" placeholder="τηλέφωνο"/>
-          </div>
-
-          <!-- ΜΟΝΟ για Τιμολόγιο -->
-          <div class="inv-only" style="grid-column:span 2">
-            <div class="muted">ΑΦΜ</div>
-            <input id="bill_vat" class="btn" style="width:100%" placeholder="ΑΦΜ"/>
-          </div>
-          <div class="inv-only" style="grid-column:span 2">
-            <div class="muted">ΔΟΥ</div>
-            <input id="bill_tax_office" class="btn" style="width:100%" placeholder="ΔΟΥ"/>
-          </div>
-          <div class="inv-only" style="grid-column:span 4">
-            <div class="muted">Διεύθυνση</div>
-            <input id="bill_address" class="btn" style="width:100%" placeholder="Οδός & αριθμός"/>
-          </div>
-          <div class="inv-only" style="grid-column:span 2">
-            <div class="muted">Τ.Κ.</div>
-            <input id="bill_zip" class="btn" style="width:100%" placeholder="Τ.Κ."/>
-          </div>
-          <div class="inv-only" style="grid-column:span 2">
-            <div class="muted">Πόλη</div>
-            <input id="bill_city" class="btn" style="width:100%" placeholder="Πόλη"/>
-          </div>
-          <div class="inv-only" style="grid-column:span 2">
-            <div class="muted">Χώρα</div>
-            <input id="bill_country" class="btn" style="width:100%" placeholder="Χώρα"/>
-          </div>
-        </div>
-        <div class="right" style="margin-top:10px">
-          <button id="btnSaveBilling" class="btn brand">Αποθήκευση</button>
-        </div>
-        <div id="bill_msg" class="muted" style="margin-top:6px"></div>
       </div>
     </div>
 
     <p class="muted" style="margin-top:16px">© ProblemSolver</p>
   </div>
 
+  <!-- Modal Παραστατικού -->
+  <div id="billingModal">
+    <div id="billingSheet">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:800">Στοιχεία Παραστατικού</div>
+        <button id="billingClose" class="btn">Κλείσιμο</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:10px">
+        <div style="grid-column:span 3">
+          <div class="muted">Τύπος</div>
+          <select id="bill_doc_type" class="btn" style="width:100%">
+            <option value="receipt">Απόδειξη</option>
+            <option value="invoice">Τιμολόγιο</option>
+          </select>
+        </div>
+
+        <!-- Κοινά πεδία -->
+        <div style="grid-column:span 6">
+          <div class="muted">Ονοματεπώνυμο / Επωνυμία</div>
+          <input id="bill_name" class="btn" style="width:100%" placeholder="Πλήρες όνομα ή επωνυμία">
+        </div>
+        <div style="grid-column:span 3">
+          <div class="muted">Email τιμολόγησης</div>
+          <input id="bill_email" class="btn" style="width:100%" placeholder="email">
+        </div>
+        <div style="grid-column:span 3">
+          <div class="muted">Τηλέφωνο</div>
+          <input id="bill_phone" class="btn" style="width:100%" placeholder="τηλέφωνο">
+        </div>
+
+        <!-- Μόνο για Τιμολόγιο -->
+        <div class="inv-only" style="grid-column:span 3">
+          <div class="muted">ΑΦΜ</div>
+          <input id="bill_vat" class="btn" style="width:100%" placeholder="ΑΦΜ">
+        </div>
+        <div class="inv-only" style="grid-column:span 3">
+          <div class="muted">ΔΟΥ</div>
+          <input id="bill_tax_office" class="btn" style="width:100%" placeholder="ΔΟΥ">
+        </div>
+        <div class="inv-only" style="grid-column:span 6">
+          <div class="muted">Διεύθυνση</div>
+          <input id="bill_address" class="btn" style="width:100%" placeholder="Οδός & αριθμός">
+        </div>
+        <div class="inv-only" style="grid-column:span 2">
+          <div class="muted">Τ.Κ.</div>
+          <input id="bill_zip" class="btn" style="width:100%" placeholder="Τ.Κ.">
+        </div>
+        <div class="inv-only" style="grid-column:span 4">
+          <div class="muted">Πόλη</div>
+          <input id="bill_city" class="btn" style="width:100%" placeholder="Πόλη">
+        </div>
+        <div class="inv-only" style="grid-column:span 6">
+          <div class="muted">Χώρα</div>
+          <input id="bill_country" class="btn" style="width:100%" placeholder="Χώρα">
+        </div>
+      </div>
+
+      <div class="right" style="margin-top:10px">
+        <button id="btnSaveBilling" class="btn brand">Αποθήκευση</button>
+      </div>
+      <div id="bill_msg" class="muted" style="margin-top:6px"></div>
+    </div>
+  </div>
+
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // ===== Config (συμπλήρωσε τα δικά σου) =====
+    /* === CONFIG: Βάλε τα δικά σου === */
     const SUPABASE_URL = window.SUPABASE_URL || 'YOUR_SUPABASE_URL';
     const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ===== Helpers =====
-    const fmtDate = (d) => {
-      try {
-        if(!d) return '—';
-        const dt = new Date(d);
-        if (isNaN(dt)) return '—';
-        return dt.toLocaleString('el-GR', {hour12:false});
-      } catch { return '—'; }
-    };
-    const setText = (id, val) => (document.getElementById(id).textContent = (val ?? '—'));
+    /* === Helpers === */
+    const fmtDate = (d)=>{ try{ if(!d) return '—'; const dt=new Date(d); if(isNaN(dt)) return '—'; return dt.toLocaleString('el-GR',{hour12:false}); }catch{ return '—'; } };
+    const setText = (id,val)=> (document.getElementById(id).textContent = (val ?? '—'));
+    async function requireUser(){ const {data:{user}} = await supabase.auth.getUser(); return user; }
+    async function signOut(){ await supabase.auth.signOut(); location.href='/'; }
+    function tag(status){ const s=(status||'').toLowerCase(); const cls = s.includes('need')?'warn':(s.includes('review')?'':(s.includes('active')?'ok':(s.includes('error')?'danger':''))); return `<span class="tag ${cls}">${status}</span>`; }
 
-    async function requireUser(){
-      const { data: { user } } = await supabase.auth.getUser();
-      return user;
-    }
-
-    async function signOut(){ await supabase.auth.signOut(); location.href = '/'; }
-
-    function tag(status){
-      const s = (status||'').toLowerCase();
-      const cls = s.includes('need') ? 'warn' : (s.includes('review') ? '' : (s.includes('active')?'ok': (s.includes('error')?'danger':'')));
-      return `<span class="tag ${cls}">${status}</span>`;
-    }
-
-    // ===== KPIs =====
+    /* === KPIs === */
     async function loadKPIs(user){
       try{
-        const uid = user.id;
-
-        // total / reserved / available via views
-        const { data: vAdmin, error: e1 } = await supabase
-          .from('v_admin_credits')
-          .select('total, reserved, available, next_expiry')
-          .eq('user_id', uid)
-          .maybeSingle();
-        if(e1) throw e1;
-
-        setText('kpi_total', vAdmin?.total ?? '—');
-        setText('kpi_reserved', vAdmin?.reserved ?? '—');
-        setText('kpi_available', vAdmin?.available ?? '—');
-        setText('kpi_next_expiry', vAdmin?.next_expiry ? fmtDate(vAdmin.next_expiry) : '—');
-      }catch(err){
-        console.warn('loadKPIs:', err.message||err);
-      }
+        const { data, error } = await supabase.from('v_admin_credits')
+          .select('total,reserved,available,next_expiry').eq('user_id', user.id).maybeSingle();
+        if(error) throw error;
+        setText('kpi_total', data?.total ?? '—');
+        setText('kpi_reserved', data?.reserved ?? '—');
+        setText('kpi_available', data?.available ?? '—');
+        setText('kpi_next_expiry', data?.next_expiry ? fmtDate(data.next_expiry) : '—');
+      }catch(e){ console.warn('loadKPIs:', e.message||e); }
     }
 
-    // ===== Account =====
+    /* === Account + Reservations === */
     async function loadAccount(user){
       setText('acc_name', user.user_metadata?.name || '—');
       setText('acc_email', user.email);
       setText('acc_uid', user.id);
       setText('acc_id', user.user_metadata?.id || '—');
-
-      // Active reservations
       try{
-        const { data, error } = await supabase
-          .from('v_reserved')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending:false })
-          .limit(10);
-
+        const { data, error } = await supabase.from('v_reserved')
+          .select('*').eq('user_id', user.id).order('created_at', {ascending:false}).limit(10);
         if(error) throw error;
-        const tbody = document.querySelector('#tblResv tbody');
-        tbody.innerHTML = '';
+        const tb = document.querySelector('#tblResv tbody'); tb.innerHTML='';
         (data||[]).forEach(r=>{
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${fmtDate(r.created_at)}</td>
-            <td>${r.amount ?? ''}</td>
-            <td>${tag(r.status||'')}</td>
-            <td>${r.expires_at ? fmtDate(r.expires_at) : '—'}</td>
-            <td class="right">—</td>`;
-          tbody.appendChild(tr);
+          const tr=document.createElement('tr');
+          tr.innerHTML = `<td>${fmtDate(r.created_at)}</td><td>${r.amount??''}</td><td>${tag(r.status||'')}</td><td>${r.expires_at?fmtDate(r.expires_at):'—'}</td><td class="right">—</td>`;
+          tb.appendChild(tr);
         });
-        if(!data || data.length===0){
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>—</td><td>—</td><td>—</td><td>—</td><td class="right">—</td>`;
-          tbody.appendChild(tr);
-        }
-      }catch(err){
-        console.warn('loadAccount:', err.message||err);
-      }
+        if(!data||!data.length){ const tr=document.createElement('tr'); tr.innerHTML=`<td>—</td><td>—</td><td>—</td><td>—</td><td class="right">—</td>`; tb.appendChild(tr); }
+      }catch(e){ console.warn('loadAccount:', e.message||e); }
     }
 
-    // ===== Questions =====
+    /* === Questions === */
     async function loadQuestions(user){
       try{
-        const { data, error } = await supabase
-          .from('v_qa_history')
-          .select('created_at, subject, status')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending:false })
-          .limit(20);
-
+        const { data, error } = await supabase.from('v_qa_history')
+          .select('created_at,subject,status').eq('user_id', user.id).order('created_at',{ascending:false}).limit(20);
         if(error) throw error;
-        const tbody = document.querySelector('#tblQuestions tbody');
-        tbody.innerHTML = '';
+        const tb = document.querySelector('#tblQuestions tbody'); tb.innerHTML='';
         (data||[]).forEach(q=>{
-          const tr = document.createElement('tr');
+          const tr=document.createElement('tr');
           tr.innerHTML = `<td>${fmtDate(q.created_at)}</td><td>${q.subject||'—'}</td><td>${tag(q.status||'')}</td>`;
-          tbody.appendChild(tr);
+          tb.appendChild(tr);
         });
-        if(!data || data.length===0){
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>—</td><td>—</td><td>—</td>`;
-          tbody.appendChild(tr);
-        }
-      }catch(err){
-        console.warn('loadQuestions:', err.message||err);
-      }
+        if(!data||!data.length){ const tr=document.createElement('tr'); tr.innerHTML=`<td>—</td><td>—</td><td>—</td>`; tb.appendChild(tr); }
+      }catch(e){ console.warn('loadQuestions:', e.message||e); }
     }
 
-    // ===== Answers =====
+    /* === Answers === */
     async function loadAnswers(user){
       try{
-        const { data, error } = await supabase
-          .from('qa_answers')
-          .select('created_at, answer_text, status, id')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending:false })
-          .limit(20);
-
+        const { data, error } = await supabase.from('qa_answers')
+          .select('created_at,answer_text,status,id').eq('user_id', user.id).order('created_at',{ascending:false}).limit(20);
         if(error) throw error;
-        const tbody = document.querySelector('#tblAnswers tbody');
-        tbody.innerHTML = '';
+        const tb = document.querySelector('#tblAnswers tbody'); tb.innerHTML='';
         (data||[]).forEach(a=>{
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${fmtDate(a.created_at)}</td>
-            <td>${a.answer_text || '—'}</td>
-            <td>${tag(a.status||'')}</td>
-            <td class="right">—</td>`;
-          tbody.appendChild(tr);
+          const tr=document.createElement('tr');
+          tr.innerHTML = `<td>${fmtDate(a.created_at)}</td><td>${a.answer_text||'—'}</td><td>${tag(a.status||'')}</td><td class="right">—</td>`;
+          tb.appendChild(tr);
         });
-        if(!data || data.length===0){
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>—</td><td>—</td><td>—</td><td class="right">—</td>`;
-          tbody.appendChild(tr);
-        }
-      }catch(err){
-        console.warn('loadAnswers:', err.message||err);
-      }
+        if(!data||!data.length){ const tr=document.createElement('tr'); tr.innerHTML=`<td>—</td><td>—</td><td>—</td><td class="right">—</td>`; tb.appendChild(tr); }
+      }catch(e){ console.warn('loadAnswers:', e.message||e); }
     }
 
-    // ===== Billing (user_billing table) =====
-    async function loadBilling(user){
-      // toggle helpers
-      function toggleInvoiceFields(){
-        const isInv = document.getElementById('bill_doc_type').value==='invoice';
-        document.querySelectorAll('.inv-only').forEach(el=>el.style.display = isInv?'block':'none');
-      }
-      document.getElementById('bill_doc_type').addEventListener('change', toggleInvoiceFields);
+    /* === Modal Παραστατικού (user_billing) === */
+    function openBilling(){ document.getElementById('billingModal').style.display='block'; }
+    function closeBilling(){ document.getElementById('billingModal').style.display='none'; }
+    function toggleInv(){
+      const isInv = document.getElementById('bill_doc_type').value==='invoice';
+      document.querySelectorAll('.inv-only').forEach(el=>el.style.display = isInv?'block':'none');
+    }
+    document.addEventListener('click', async (e)=>{
+      if(e.target && e.target.id==='btnBilling'){ const u = await requireUser(); await loadBilling(u); openBilling(); }
+      if(e.target && (e.target.id==='billingClose' || e.target.id==='billingModal')) closeBilling();
+      if(e.target && e.target.id==='btnSaveBilling'){ const u = await requireUser(); await saveBilling(u); }
+    });
+    document.addEventListener('change',(e)=>{ if(e.target && e.target.id==='bill_doc_type') toggleInv(); });
 
+    async function loadBilling(user){
       try{
-        const { data, error } = await supabase
-          .from('user_billing')
+        const { data, error } = await supabase.from('user_billing')
           .select('name,vat,tax_office,email,address,zip,city,country,phone,doc_type')
-          .eq('user_id', user.id)
-          .maybeSingle();
+          .eq('user_id', user.id).maybeSingle();
         if(error) throw error;
-        const v = data || {};
+        const v=data||{};
         (id=>id.value=v.name||'')(document.getElementById('bill_name'));
         (id=>id.value=v.vat||'')(document.getElementById('bill_vat'));
         (id=>id.value=v.tax_office||'')(document.getElementById('bill_tax_office'));
@@ -356,66 +279,48 @@
         (id=>id.value=v.country||'')(document.getElementById('bill_country'));
         (id=>id.value=v.phone||'')(document.getElementById('bill_phone'));
         (id=>id.value=v.doc_type||'receipt')(document.getElementById('bill_doc_type'));
-        document.getElementById('bill_doc_type').dispatchEvent(new Event('change'));
-      }catch(e){
-        console.warn('loadBilling:', e.message||e);
-      }
+        toggleInv();
+      }catch(e){ console.warn('loadBilling:', e); }
     }
     async function saveBilling(user){
       const rec = {
-        user_id: user.id,
-        name: document.getElementById('bill_name').value?.trim()||null,
-        vat: document.getElementById('bill_vat').value?.trim()||null,
-        tax_office: document.getElementById('bill_tax_office').value?.trim()||null,
-        email: document.getElementById('bill_email').value?.trim()||user.email,
-        address: document.getElementById('bill_address').value?.trim()||null,
-        zip: document.getElementById('bill_zip').value?.trim()||null,
-        city: document.getElementById('bill_city').value?.trim()||null,
-        country: document.getElementById('bill_country').value?.trim()||null,
-        phone: document.getElementById('bill_phone').value?.trim()||null,
-        doc_type: document.getElementById('bill_doc_type').value||'receipt',
-        updated_at: new Date().toISOString()
+        user_id:user.id,
+        name:document.getElementById('bill_name').value?.trim()||null,
+        vat:document.getElementById('bill_vat').value?.trim()||null,
+        tax_office:document.getElementById('bill_tax_office').value?.trim()||null,
+        email:document.getElementById('bill_email').value?.trim()||user.email,
+        address:document.getElementById('bill_address').value?.trim()||null,
+        zip:document.getElementById('bill_zip').value?.trim()||null,
+        city:document.getElementById('bill_city').value?.trim()||null,
+        country:document.getElementById('bill_country').value?.trim()||null,
+        phone:document.getElementById('bill_phone').value?.trim()||null,
+        doc_type:document.getElementById('bill_doc_type').value||'receipt',
+        updated_at:new Date().toISOString()
       };
       try{
-        const { error } = await supabase
-          .from('user_billing')
-          .upsert(rec, { onConflict: 'user_id' });
+        const { error } = await supabase.from('user_billing').upsert(rec,{ onConflict:'user_id' });
         if(error) throw error;
-        document.getElementById('bill_msg').textContent = 'Αποθηκεύτηκαν.';
-        setTimeout(()=>document.getElementById('bill_msg').textContent='', 2500);
-      }catch(e){
-        document.getElementById('bill_msg').textContent = 'Σφάλμα: '+(e.message||e);
-      }
+        document.getElementById('bill_msg').textContent='Αποθηκεύτηκαν.';
+        setTimeout(()=>document.getElementById('bill_msg').textContent='',1800);
+        closeBilling();
+      }catch(e){ document.getElementById('bill_msg').textContent='Σφάλμα: '+(e.message||e); }
     }
 
-    // ===== Boot =====
+    /* === Boot === */
     async function Boot(){
-      const user = await requireUser();
-      if (!user) return;
-      window.currentUser = user;
-
-      // KPIs
+      const user = await requireUser(); if(!user) return;
       await loadKPIs(user);
-
-      // Λογαριασμός
       await loadAccount(user);
-
-      // Billing form
-      await loadBilling(user);
-
-      // Ιστορικά
       await loadQuestions(user);
       await loadAnswers(user);
     }
 
-    // ===== Events =====
-    document.addEventListener('click', (e)=>{
+    /* === Events === */
+    document.addEventListener('click',(e)=>{
       if(e.target && e.target.id==='btnRefresh') Boot();
       if(e.target && e.target.id==='btnLogout') signOut();
-      if(e.target && e.target.id==='btnSaveBilling') window.currentUser && saveBilling(window.currentUser);
     });
 
-    // Init
     Boot();
   </script>
 </body>
