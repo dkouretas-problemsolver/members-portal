@@ -338,35 +338,30 @@
     Boot();
   </script>
 
-  <!-- === Cookie prefill για /question (χωρίς preventDefault) === -->
+  <!-- === Prefill Tally: περνάμε full_name + email ως URL params === -->
   <script>
-    function setPrefillCookie(data){
-      const payload = btoa(JSON.stringify({
-        firstName: data.firstName || '',
-        lastName:  data.lastName  || '',
-        email:     data.email     || ''
-      }));
-      const maxAge = 60 * 10; // 10 λεπτά
-      document.cookie = `ps_prefill=${payload}; Max-Age=${maxAge}; Path=/; Domain=.problemsolver.gr; Secure; SameSite=Lax`;
-    }
-    function splitNames(fullName=''){
-      const parts = (fullName||'').trim().split(/\s+/);
-      return { first: parts[0]||'', last: parts.slice(1).join(' ')||'' };
+    function addParams(url, params){
+      const u = new URL(url);
+      Object.entries(params).forEach(([k,v]) => { if(v) u.searchParams.set(k, v); });
+      return u.toString();
     }
     const askEl = document.getElementById('askBtn');
-    function handleAsk(){
-      const fullName = document.getElementById('bill_name')?.value?.trim()
+    askEl?.addEventListener('click', function(){
+      // Παίρνουμε ονοματεπώνυμο & email από τη φόρμα ή/και τα στοιχεία λογαριασμού
+      const fullName = (document.getElementById('bill_name')?.value?.trim()
                       || document.getElementById('accName')?.textContent?.trim()
-                      || '';
-      const email1 = document.getElementById('bill_email')?.value?.trim() || '';
-      const email2 = document.getElementById('accEmail')?.textContent?.trim() || '';
-      const { first, last } = splitNames(fullName);
-      setPrefillCookie({ firstName:first, lastName:last, email:(email1||email2) });
-      // δεν κάνουμε preventDefault — αφήνουμε το link να ανοίξει κανονικά (target=_blank)
-    }
-    askEl?.addEventListener('click', handleAsk);
-    // υποστήριξη για μεσαίο κλικ (mouse button 1)
-    askEl?.addEventListener('auxclick', (e)=>{ if(e.button===1) handleAsk(); });
+                      || '');
+      const email = (document.getElementById('bill_email')?.value?.trim()
+                  || document.getElementById('accEmail')?.textContent?.trim()
+                  || '');
+
+      // Προσθέτουμε ?full_name=...&email=... στο link της Tally
+      this.href = addParams(this.href, {
+        full_name: fullName,
+        email:     email
+      });
+      // Δεν κάνουμε preventDefault — αφήνουμε τον browser να ανοίξει το link (target=_blank)
+    });
   </script>
 </body>
 </html>
