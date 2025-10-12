@@ -22,8 +22,13 @@
       background:linear-gradient(90deg,#FF6B00,#ff9b4c);
       -webkit-background-clip:text;background-clip:text;color:transparent}
 
-    .subbar{max-width:1100px;margin:6px auto 8px;padding:0 12px;display:flex;justify-content:flex-end}
-    .btn{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600;height:38px;line-height:22px}
+    .subbar{max-width:1100px;margin:6px auto 8px;padding:0 12px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;
+      background:#fff;border:1px solid #e5e7eb;border-radius:10px;
+      padding:8px 12px;cursor:pointer;font-weight:600;height:38px;line-height:22px;
+      text-decoration:none;color:#111;
+    }
     .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
     .btn.brand:hover{filter:brightness(.98)}
 
@@ -31,7 +36,7 @@
     .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
     .card{background:#fff;border:1px solid #eee;border-radius:14px;padding:12px}
 
-    /* KPIs (χωρίς ΛΗΞΗ) */
+    /* KPIs */
     .kpi{padding:14px}
     .kpi h4{margin:0 0 6px 0;font-size:13px;color:var(--muted);font-weight:600}
     .kpi .value{min-height:26px;font-size:21px;font-weight:700;letter-spacing:0.2px}
@@ -71,13 +76,17 @@
       </div>
     </div>
   </div>
+
+  <!-- Actions -->
   <div class="subbar">
+    <a class="btn" href="https://www.problemsolver.gr/question" target="_blank" rel="noopener">Κάνε την ερώτησή σου</a>
+    <a class="btn brand" href="https://www.problemsolver.gr/buy-credits" target="_blank" rel="noopener">Αγόρασε Credits</a>
     <button id="btnSignOut" class="btn">Αποσύνδεση</button>
   </div>
 
   <div class="container">
     <div class="grid">
-      <!-- KPIs (3 μόνο) -->
+      <!-- KPIs -->
       <div class="card kpi" style="grid-column: span 4;">
         <h4>Σύνολο Credits</h4><div id="totalCredits" class="value">—</div>
       </div>
@@ -169,7 +178,7 @@
         <div class="section-title">Απαντήσεις</div>
         <table id="tblAnswers">
           <thead><tr><th>Ημερομηνία</th><th>Απάντηση</th></tr></thead>
-          <tbody id="tbodyAnswers"><tr><td class="muted" colspan="2">—</td></tr></tbody>
+        <tbody id="tbodyAnswers"><tr><td class="muted" colspan="2">—</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -188,7 +197,7 @@
 
     async function requireUser(){ const {data:{user}}=await supabase.auth.getUser(); if(!user){location.href='/login.html';return null;} return user; }
 
-    /* ===== KPIs (χωρίς λήξη/κρατήσεις) ===== */
+    /* ===== KPIs ===== */
     async function loadBalances(){
       let total=0,reserved=0;
       try{
