@@ -12,41 +12,44 @@
     *{box-sizing:border-box}
     body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:#111}
 
-    .topbar{padding:6px 0;border-bottom:1px solid #eee;background:#fff;position:sticky;top:0;z-index:20}
-    .topbar .logo{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800}
-    .topbar img{width:84px;height:84px;border-radius:12px}
-    .subbar{display:flex;justify-content:flex-end;gap:8px;padding:6px 12px;border-top:1px solid #f2f2f2;background:#fff}
+    /* HERO header με logo + tagline */
+    .hero{background:#fff;border-bottom:1px solid #eee;padding:18px 0 14px}
+    .hero-inner{max-width:1100px;margin:0 auto;padding:0 12px;display:flex;align-items:center;gap:18px}
+    .hero img{width:96px;height:96px;border-radius:14px;flex:0 0 auto}
+    .hero-text{display:flex;flex-direction:column;gap:4px}
+    .brand-line{font-weight:800;font-size:18px}
+    .tagline{font-weight:700;font-size:16px;
+      background:linear-gradient(90deg,#FF6B00,#ff9b4c);
+      -webkit-background-clip:text;background-clip:text;color:transparent}
 
+    .subbar{max-width:1100px;margin:6px auto 8px;padding:0 12px;display:flex;justify-content:flex-end}
     .btn{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600;height:38px;line-height:22px}
     .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
     .btn.brand:hover{filter:brightness(.98)}
 
-    .container{max-width:1100px;margin:12px auto 18px;padding:0 12px}
+    .container{max-width:1100px;margin:6px auto 18px;padding:0 12px}
     .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
     .card{background:#fff;border:1px solid #eee;border-radius:14px;padding:12px}
+
+    /* KPIs (χωρίς ΛΗΞΗ) */
     .kpi{padding:14px}
     .kpi h4{margin:0 0 6px 0;font-size:13px;color:var(--muted);font-weight:600}
     .kpi .value{min-height:26px;font-size:21px;font-weight:700;letter-spacing:0.2px}
-    .section-title{font-weight:700;margin:6px 0 10px 0;color:#111}
 
+    .section-title{font-weight:700;margin:6px 0 10px 0;color:#111}
     table{width:100%;border-collapse:collapse}
     th,td{padding:9px 8px;border-bottom:1px solid #eee;font-size:14px}
     th{color:#374151;text-align:left}
     .muted{color:var(--muted)}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace}
-    .pill{display:inline-block;padding:3px 8px;border-radius:999px;background:#f3f4f6;color:#374151;font-size:12px;font-weight:600}
-    .pill.ok{background:#e8f7ec;color:#067647}
-    .pill.warn{background:#fff4e5;color:#92400e}
 
+    /* Account + billing */
     .account{display:grid;grid-template-columns:120px 1fr;row-gap:8px;column-gap:8px}
     .account .label{color:#6b7280}
-    .account-section{margin-top:22px;padding-top:14px;border-top:3px solid rgba(255,107,0,.28)}
+    .account-section{margin-top:18px;padding-top:12px;border-top:3px solid rgba(255,107,0,.28)}
     .form-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
     .input{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px}
     .inv-only{display:none}
-
-    /* gap ανάμεσα σε Ερωτήσεις & Κρατήσεις */
-    .q-res-gap{margin-top:14px}
 
     /* Answers clamp */
     .answer-text{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
@@ -57,34 +60,36 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 </head>
 <body>
-  <div class="topbar">
-    <div class="logo">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
       <img src="https://raw.githubusercontent.com/dkouretas-problemsolver/members-portal/main/public/brandmark-design-1080x1080.png" alt="ProblemSolver">
-      <div>ProblemSolver • Μέλη</div>
+      <div class="hero-text">
+        <div class="brand-line">ProblemSolver • Μέλη</div>
+        <div class="tagline">Υπάρχει πάντα μια λύση</div>
+      </div>
     </div>
-    <div class="subbar">
-      <button id="btnSignOut" class="btn">Αποσύνδεση</button>
-    </div>
+  </div>
+  <div class="subbar">
+    <button id="btnSignOut" class="btn">Αποσύνδεση</button>
   </div>
 
   <div class="container">
     <div class="grid">
-      <!-- KPIs -->
-      <div class="card kpi" style="grid-column: span 3;">
+      <!-- KPIs (3 μόνο) -->
+      <div class="card kpi" style="grid-column: span 4;">
         <h4>Σύνολο Credits</h4><div id="totalCredits" class="value">—</div>
       </div>
-      <div class="card kpi" style="grid-column: span 3;">
+      <div class="card kpi" style="grid-column: span 4;">
         <h4>Δεσμευμένα</h4><div id="reservedCredits" class="value">—</div>
       </div>
-      <div class="card kpi" style="grid-column: span 3;">
+      <div class="card kpi" style="grid-column: span 4;">
         <h4>Διαθέσιμα</h4><div id="availableCredits" class="value">—</div>
       </div>
-      <div class="card kpi" style="grid-column: span 3;">
-        <h4>Επόμενη Λήξη</h4><div id="nextExpiry" class="value">—</div>
-      </div>
 
-      <!-- ΑΡΙΣΤΕΡΑ: Λογαριασμός + Στοιχεία Πελάτη -->
-      <div class="card" style="grid-column: span 7;">
+      <!-- ΠΑΝΩ: Λογαριασμός + Στοιχεία Πελάτη -->
+      <div class="card" style="grid-column: span 12;">
         <div class="section-title">Λογαριασμός</div>
         <div class="account">
           <div class="label">Όνομα:</div> <div id="accName">—</div>
@@ -94,7 +99,6 @@
 
         <div class="account-section">
           <div class="section-title" style="margin:0 0 8px">Στοιχεία Πελάτη (Επεξεργάσιμα)</div>
-
           <div class="form-grid">
             <div style="grid-column:span 4">
               <div class="muted">Τύπος</div>
@@ -108,6 +112,7 @@
               <input id="bill_name" class="input" placeholder="Πλήρες όνομα ή επωνυμία">
             </div>
 
+            <!-- Invoice-only -->
             <div class="inv-only" style="grid-column:span 4">
               <div class="muted">ΑΦΜ</div>
               <input id="bill_vat" class="input" placeholder="ΑΦΜ">
@@ -133,6 +138,7 @@
               <input id="bill_country" class="input" placeholder="Χώρα">
             </div>
 
+            <!-- Common -->
             <div style="grid-column:span 6">
               <div class="muted">Τηλέφωνο</div>
               <input id="bill_phone" class="input" placeholder="τηλέφωνο">
@@ -150,28 +156,19 @@
         </div>
       </div>
 
-      <!-- ΔΕΞΙΑ: Ερωτήσεις + Κενό + Κρατήσεις -->
-      <div class="card" style="grid-column: span 5;">
+      <!-- ΚΑΤΩ: δύο στήλες — Ερωτήσεις | Απαντήσεις -->
+      <div class="card" style="grid-column: span 6;">
         <div class="section-title">Ιστορικό Ερωτήσεων</div>
         <table id="tblQuestions">
-          <thead><tr><th>Ημερομηνία</th><th>Θέμα/Ερώτηση</th></tr></thead> <!-- ΧΩΡΙΣ status -->
+          <thead><tr><th>Ημερομηνία</th><th>Θέμα/Ερώτηση</th></tr></thead>
           <tbody id="tbodyQuestions"><tr><td class="muted" colspan="2">—</td></tr></tbody>
-        </table>
-
-        <div class="q-res-gap"></div> <!-- έξτρα κενό ανάμεσα τους -->
-
-        <div class="section-title">Κρατήσεις (Active)</div>
-        <table id="tblRes">
-          <thead><tr><th>Ημερομηνία</th><th>Ποσό</th><th>Κατάσταση</th><th>Λήξη</th></tr></thead>
-          <tbody id="tbodyRes"><tr><td class="muted" colspan="4">—</td></tr></tbody>
         </table>
       </div>
 
-      <!-- Απαντήσεις -->
-      <div class="card" style="grid-column: span 12; margin-top:4px">
+      <div class="card" style="grid-column: span 6;">
         <div class="section-title">Απαντήσεις</div>
         <table id="tblAnswers">
-          <thead><tr><th>Ημερομηνία</th><th>Απάντηση</th></tr></thead> <!-- τίτλος στήλης = Απάντηση -->
+          <thead><tr><th>Ημερομηνία</th><th>Απάντηση</th></tr></thead>
           <tbody id="tbodyAnswers"><tr><td class="muted" colspan="2">—</td></tr></tbody>
         </table>
       </div>
@@ -181,6 +178,7 @@
   </div>
 
   <script>
+    /* === SUPABASE CONFIG === */
     const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{persistSession:true}, db:{schema:'app'} });
@@ -190,26 +188,25 @@
 
     async function requireUser(){ const {data:{user}}=await supabase.auth.getUser(); if(!user){location.href='/login.html';return null;} return user; }
 
+    /* ===== KPIs (χωρίς λήξη/κρατήσεις) ===== */
     async function loadBalances(){
-      let total=0,reserved=0,nextExpiry=null;
+      let total=0,reserved=0;
       try{
         const { data, error } = await supabase.from('credit_balances').select('balance').maybeSingle();
         if(error) throw error; total = (data?.balance ?? 0)|0;
       }catch(e){ console.error('credit_balances', e); }
       try{
         const { data, error } = await supabase.from('credit_reservations')
-          .select('amount,credits_reserved,status,expires_at,created_at').eq('status','active');
+          .select('amount,credits_reserved,status').eq('status','active');
         if(error) throw error;
-        const now=new Date(); const active=(data||[]).filter(r=>r.status==='active' && (!r.expires_at || new Date(r.expires_at)>now));
-        reserved = active.reduce((s,r)=>s+((r.credits_reserved ?? r.amount ?? 0)|0),0);
-        active.forEach(r=>{ if(r.expires_at){ const d=new Date(r.expires_at); if(!nextExpiry||d<nextExpiry) nextExpiry=d; }});
+        reserved = (data||[]).reduce((s,r)=>s+((r.credits_reserved ?? r.amount ?? 0)|0),0);
       }catch(e){ console.warn('credit_reservations', e); }
       $('#totalCredits').textContent = total;
       $('#reservedCredits').textContent = reserved;
       $('#availableCredits').textContent = Math.max(0,total-reserved);
-      $('#nextExpiry').textContent = nextExpiry ? nextExpiry.toLocaleDateString('el-GR') : '—';
     }
 
+    /* ===== Q&A ===== */
     async function fetchMyQaAnswers(user){
       const { data, error } = await supabase.from('qa_answers')
         .select('id,created_at,updated_at,email,status,question,answer,agent_draft,user_id')
@@ -217,8 +214,7 @@
       if(error) throw error;
       return (data||[]).filter(r => (r.user_id && r.user_id===user.id) || (r.email && r.email===user.email));
     }
-
-    // Ερωτήσεις χωρίς status
+    // Ερωτήσεις (χωρίς status)
     async function loadQuestions(user){
       try{
         const rows = await fetchMyQaAnswers(user);
@@ -232,8 +228,7 @@
         }
       }catch(e){ console.error('loadQuestions',e); $('#tbodyQuestions').innerHTML='<tr><td class="muted" colspan="2">—</td></tr>'; }
     }
-
-    // Απαντήσεις με clamp 3 γραμμές
+    // Απαντήσεις (clamp 3 γραμμές)
     async function loadAnswers(user){
       try{
         const rows = await fetchMyQaAnswers(user);
@@ -261,29 +256,11 @@
       }
     });
 
-    async function loadReservations(){
-      try{
-        const { data, error } = await supabase.from('credit_reservations')
-          .select('amount,credits_reserved,status,created_at,expires_at')
-          .eq('status','active').order('created_at',{ascending:false}).limit(50);
-        if(error) throw error;
-        const tb=$('#tbodyRes'); tb.innerHTML='';
-        if(!data?.length){ tb.innerHTML='<tr><td class="muted" colspan="4">—</td></tr>'; return; }
-        for(const r of data){
-          const amt=(r.credits_reserved ?? r.amount ?? 0);
-          const tr=document.createElement('tr');
-          tr.innerHTML=`<td>${fmt(r.created_at)}</td><td>${amt}</td><td><span class="pill ${r.status==='active'?'ok':'warn'}">${r.status}</span></td><td>${r.expires_at?fmt(r.expires_at):'—'}</td>`;
-          tb.appendChild(tr);
-        }
-      }catch(e){ console.warn('loadReservations',e); $('#tbodyRes').innerHTML='<tr><td class="muted" colspan="4">—</td></tr>'; }
-    }
-
+    /* ===== Billing ===== */
     function toggleInvoiceFields(){
       const isInv = $('#bill_doc_type').value==='invoice';
       document.querySelectorAll('.inv-only').forEach(el=>el.style.display = isInv?'block':'none');
     }
-
-    // Φόρτωση Billing + ενημέρωση accName από εκεί αν υπάρχει
     async function loadBilling(user){
       try{
         const { data, error } = await supabase.from('user_billing')
@@ -303,14 +280,11 @@
         $('#bill_doc_type').value = v.doc_type || 'receipt';
         toggleInvoiceFields();
 
-        // Όνομα στον λογαριασμό: billing.name -> user_metadata.name -> —
+        // Όνομα: από billing.name, αλλιώς user meta
         const fallbackName = user.user_metadata?.name || '—';
         $('#accName').textContent = v.name || fallbackName;
-      }catch(e){
-        console.warn('loadBilling', e);
-      }
+      }catch(e){ console.warn('loadBilling', e); }
     }
-
     async function saveBilling(user){
       const rec = {
         user_id: user.id,
@@ -330,23 +304,21 @@
         const { error } = await supabase.from('user_billing').upsert(rec,{ onConflict:'user_id' });
         if(error) throw error;
         $('#bill_msg').textContent='Αποθηκεύτηκαν.';
-        // refresh και το Όνομα στην καρτέλα
         $('#accName').textContent = rec.name || $('#accName').textContent;
         setTimeout(()=>$('#bill_msg').textContent='',2000);
       }catch(e){ $('#bill_msg').textContent='Σφάλμα: '+(e.message||e); }
     }
 
+    /* ===== Boot & Events ===== */
     async function Boot(){
       const user = await requireUser(); if(!user) return;
       $('#accEmail').textContent = user.email || '—';
       $('#accUser').textContent  = user.id || '—';
-      // προσωρινά βάλε το user meta μέχρι να φορτώσει το billing
       $('#accName').textContent  = user.user_metadata?.name || '—';
 
       await loadBilling(user);
       await loadBalances();
       await loadQuestions(user);
-      await loadReservations();
       await loadAnswers(user);
     }
 
