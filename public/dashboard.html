@@ -12,7 +12,6 @@
     *{box-sizing:border-box}
     body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:#111}
 
-    /* Top logo bar – πιο μαζεμένη */
     .topbar{padding:6px 0;border-bottom:1px solid #eee;background:#fff;position:sticky;top:0;z-index:20}
     .topbar .logo{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800}
     .topbar img{width:84px;height:84px;border-radius:12px}
@@ -22,9 +21,9 @@
     .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
     .btn.brand:hover{filter:brightness(.98)}
 
-    .container{max-width:1100px;margin:12px auto 18px;padding:0 12px}  /* μικρότερο top margin */
+    .container{max-width:1100px;margin:12px auto 18px;padding:0 12px}
     .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
-    .card{background:#fff;border:1px solid #eee;border-radius:14px;padding:12px} /* πιο σφιχτά */
+    .card{background:#fff;border:1px solid #eee;border-radius:14px;padding:12px}
     .kpi{padding:14px}
     .kpi h4{margin:0 0 6px 0;font-size:13px;color:var(--muted);font-weight:600}
     .kpi .value{min-height:26px;font-size:21px;font-weight:700;letter-spacing:0.2px}
@@ -39,14 +38,15 @@
     .pill.ok{background:#e8f7ec;color:#067647}
     .pill.warn{background:#fff4e5;color:#92400e}
 
-    /* Account + editable billing */
     .account{display:grid;grid-template-columns:120px 1fr;row-gap:8px;column-gap:8px}
     .account .label{color:#6b7280}
     .account-section{margin-top:22px;padding-top:14px;border-top:3px solid rgba(255,107,0,.28)}
     .form-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
     .input{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px}
-
     .inv-only{display:none}
+
+    /* gap ανάμεσα σε Ερωτήσεις & Κρατήσεις */
+    .q-res-gap{margin-top:14px}
 
     /* Answers clamp */
     .answer-text{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
@@ -57,8 +57,6 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 </head>
 <body>
-
-  <!-- Logo centered -->
   <div class="topbar">
     <div class="logo">
       <img src="https://raw.githubusercontent.com/dkouretas-problemsolver/members-portal/main/public/brandmark-design-1080x1080.png" alt="ProblemSolver">
@@ -110,7 +108,6 @@
               <input id="bill_name" class="input" placeholder="Πλήρες όνομα ή επωνυμία">
             </div>
 
-            <!-- Invoice-only -->
             <div class="inv-only" style="grid-column:span 4">
               <div class="muted">ΑΦΜ</div>
               <input id="bill_vat" class="input" placeholder="ΑΦΜ">
@@ -136,7 +133,6 @@
               <input id="bill_country" class="input" placeholder="Χώρα">
             </div>
 
-            <!-- Common -->
             <div style="grid-column:span 6">
               <div class="muted">Τηλέφωνο</div>
               <input id="bill_phone" class="input" placeholder="τηλέφωνο">
@@ -154,28 +150,28 @@
         </div>
       </div>
 
-      <!-- ΔΕΞΙΑ: Ερωτήσεις + Κρατήσεις στο ίδιο card για να μη μένει άδειο -->
+      <!-- ΔΕΞΙΑ: Ερωτήσεις + Κενό + Κρατήσεις -->
       <div class="card" style="grid-column: span 5;">
         <div class="section-title">Ιστορικό Ερωτήσεων</div>
         <table id="tblQuestions">
-          <thead><tr><th>Ημερομηνία</th><th>Θέμα/Ερώτηση</th><th>Status</th></tr></thead>
-        </table>
-        <table>
-          <tbody id="tbodyQuestions"><tr><td class="muted" colspan="3">—</td></tr></tbody>
+          <thead><tr><th>Ημερομηνία</th><th>Θέμα/Ερώτηση</th></tr></thead> <!-- ΧΩΡΙΣ status -->
+          <tbody id="tbodyQuestions"><tr><td class="muted" colspan="2">—</td></tr></tbody>
         </table>
 
-        <div class="section-title" style="margin-top:12px">Κρατήσεις (Active)</div>
+        <div class="q-res-gap"></div> <!-- έξτρα κενό ανάμεσα τους -->
+
+        <div class="section-title">Κρατήσεις (Active)</div>
         <table id="tblRes">
           <thead><tr><th>Ημερομηνία</th><th>Ποσό</th><th>Κατάσταση</th><th>Λήξη</th></tr></thead>
           <tbody id="tbodyRes"><tr><td class="muted" colspan="4">—</td></tr></tbody>
         </table>
       </div>
 
-      <!-- Απαντήσεις: χωρίς Status + clamp 3 γραμμές — πιο κοντά (πάνω margin μικρό) -->
+      <!-- Απαντήσεις -->
       <div class="card" style="grid-column: span 12; margin-top:4px">
         <div class="section-title">Απαντήσεις</div>
         <table id="tblAnswers">
-          <thead><tr><th>Ημερομηνία</th><th>Απάντηση / Πρόχειρο</th></tr></thead>
+          <thead><tr><th>Ημερομηνία</th><th>Απάντηση</th></tr></thead> <!-- τίτλος στήλης = Απάντηση -->
           <tbody id="tbodyAnswers"><tr><td class="muted" colspan="2">—</td></tr></tbody>
         </table>
       </div>
@@ -185,7 +181,6 @@
   </div>
 
   <script>
-    /* === SUPABASE CONFIG === */
     const SUPABASE_URL = 'https://sctqieecpfsaszcuqcrv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjdHFpZWVjcGZzYXN6Y3VxY3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxODI5MjYsImV4cCI6MjA3NDc1ODkyNn0.swR5_WutqIlCvpH4s-2LEYgrH-UAp0op2sfKQeVWQOk';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{persistSession:true}, db:{schema:'app'} });
@@ -195,7 +190,6 @@
 
     async function requireUser(){ const {data:{user}}=await supabase.auth.getUser(); if(!user){location.href='/login.html';return null;} return user; }
 
-    /* ===== KPIs ===== */
     async function loadBalances(){
       let total=0,reserved=0,nextExpiry=null;
       try{
@@ -216,7 +210,6 @@
       $('#nextExpiry').textContent = nextExpiry ? nextExpiry.toLocaleDateString('el-GR') : '—';
     }
 
-    /* ===== Q&A ===== */
     async function fetchMyQaAnswers(user){
       const { data, error } = await supabase.from('qa_answers')
         .select('id,created_at,updated_at,email,status,question,answer,agent_draft,user_id')
@@ -224,19 +217,23 @@
       if(error) throw error;
       return (data||[]).filter(r => (r.user_id && r.user_id===user.id) || (r.email && r.email===user.email));
     }
+
+    // Ερωτήσεις χωρίς status
     async function loadQuestions(user){
       try{
         const rows = await fetchMyQaAnswers(user);
         const list = rows.filter(r => r.question && r.question.trim().length);
         const tb = $('#tbodyQuestions'); tb.innerHTML='';
-        if(!list.length){ tb.innerHTML='<tr><td class="muted" colspan="3">—</td></tr>'; return; }
+        if(!list.length){ tb.innerHTML='<tr><td class="muted" colspan="2">—</td></tr>'; return; }
         for(const q of list){
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td>${fmt(q.created_at)}</td><td>${q.question}</td><td><span class="pill">${q.status||'—'}</span></td>`;
+          tr.innerHTML=`<td>${fmt(q.created_at)}</td><td>${q.question}</td>`;
           tb.appendChild(tr);
         }
-      }catch(e){ console.error('loadQuestions',e); $('#tbodyQuestions').innerHTML='<tr><td class="muted" colspan="3">—</td></tr>'; }
+      }catch(e){ console.error('loadQuestions',e); $('#tbodyQuestions').innerHTML='<tr><td class="muted" colspan="2">—</td></tr>'; }
     }
+
+    // Απαντήσεις με clamp 3 γραμμές
     async function loadAnswers(user){
       try{
         const rows = await fetchMyQaAnswers(user);
@@ -264,7 +261,6 @@
       }
     });
 
-    /* ===== Reservations ===== */
     async function loadReservations(){
       try{
         const { data, error } = await supabase.from('credit_reservations')
@@ -282,11 +278,12 @@
       }catch(e){ console.warn('loadReservations',e); $('#tbodyRes').innerHTML='<tr><td class="muted" colspan="4">—</td></tr>'; }
     }
 
-    /* ===== Billing ===== */
     function toggleInvoiceFields(){
       const isInv = $('#bill_doc_type').value==='invoice';
       document.querySelectorAll('.inv-only').forEach(el=>el.style.display = isInv?'block':'none');
     }
+
+    // Φόρτωση Billing + ενημέρωση accName από εκεί αν υπάρχει
     async function loadBilling(user){
       try{
         const { data, error } = await supabase.from('user_billing')
@@ -305,8 +302,15 @@
         $('#bill_phone').value = v.phone||'';
         $('#bill_doc_type').value = v.doc_type || 'receipt';
         toggleInvoiceFields();
-      }catch(e){ console.warn('loadBilling', e); }
+
+        // Όνομα στον λογαριασμό: billing.name -> user_metadata.name -> —
+        const fallbackName = user.user_metadata?.name || '—';
+        $('#accName').textContent = v.name || fallbackName;
+      }catch(e){
+        console.warn('loadBilling', e);
+      }
     }
+
     async function saveBilling(user){
       const rec = {
         user_id: user.id,
@@ -326,15 +330,17 @@
         const { error } = await supabase.from('user_billing').upsert(rec,{ onConflict:'user_id' });
         if(error) throw error;
         $('#bill_msg').textContent='Αποθηκεύτηκαν.';
+        // refresh και το Όνομα στην καρτέλα
+        $('#accName').textContent = rec.name || $('#accName').textContent;
         setTimeout(()=>$('#bill_msg').textContent='',2000);
       }catch(e){ $('#bill_msg').textContent='Σφάλμα: '+(e.message||e); }
     }
 
-    /* ===== Boot & Events ===== */
     async function Boot(){
       const user = await requireUser(); if(!user) return;
       $('#accEmail').textContent = user.email || '—';
       $('#accUser').textContent  = user.id || '—';
+      // προσωρινά βάλε το user meta μέχρι να φορτώσει το billing
       $('#accName').textContent  = user.user_metadata?.name || '—';
 
       await loadBilling(user);
