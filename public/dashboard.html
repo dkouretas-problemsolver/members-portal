@@ -12,23 +12,15 @@
     *{box-sizing:border-box}
     body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:#111}
 
-    /* HERO header με logo + tagline */
     .hero{background:#fff;border-bottom:1px solid #eee;padding:18px 0 14px}
     .hero-inner{max-width:1100px;margin:0 auto;padding:0 12px;display:flex;align-items:center;gap:18px}
     .hero img{width:96px;height:96px;border-radius:14px;flex:0 0 auto}
     .hero-text{display:flex;flex-direction:column;gap:4px}
     .brand-line{font-weight:800;font-size:18px}
-    .tagline{font-weight:700;font-size:16px;
-      background:linear-gradient(90deg,#FF6B00,#ff9b4c);
-      -webkit-background-clip:text;background-clip:text;color:transparent}
+    .tagline{font-weight:700;font-size:16px;background:linear-gradient(90deg,#FF6B00,#ff9b4c);-webkit-background-clip:text;background-clip:text;color:transparent}
 
     .subbar{max-width:1100px;margin:6px auto 8px;padding:0 12px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
-    .btn{
-      display:inline-flex;align-items:center;gap:8px;
-      background:#fff;border:1px solid #e5e7eb;border-radius:10px;
-      padding:8px 12px;cursor:pointer;font-weight:600;height:38px;line-height:22px;
-      text-decoration:none;color:#111;
-    }
+    .btn{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600;height:38px;line-height:22px;text-decoration:none;color:#111}
     .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
     .btn.brand:hover{filter:brightness(.98)}
 
@@ -36,7 +28,6 @@
     .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
     .card{background:#fff;border:1px solid #eee;border-radius:14px;padding:12px}
 
-    /* KPIs */
     .kpi{padding:14px}
     .kpi h4{margin:0 0 6px 0;font-size:13px;color:var(--muted);font-weight:600}
     .kpi .value{min-height:26px;font-size:21px;font-weight:700;letter-spacing:0.2px}
@@ -48,18 +39,15 @@
     .muted{color:var(--muted)}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace}
 
-    /* Account + billing */
     .account{display:grid;grid-template-columns:120px 1fr;row-gap:8px;column-gap:8px}
     .account .label{color:#6b7280}
     .account-section{margin-top:18px;padding-top:12px;border-top:3px solid rgba(255,107,0,.28)}
     .form-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
     .input{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px}
-    .inv-only{display:none}
 
-    /* Answers clamp */
-    .answer-text{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-    .answer-text.open{-webkit-line-clamp:unset}
-    .show-more{border:none;background:none;color:#FF6B00;cursor:pointer;font-weight:600;padding:0;margin-top:4px}
+    /* Ορατότητα ανά τύπο παραστατικού */
+    .inv-only{display:none}     /* φαίνονται μόνο όταν τύπος = invoice */
+    .rec-only{display:block}    /* φαίνονται μόνο όταν τύπος = receipt */
   </style>
 
   <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -116,12 +104,25 @@
                 <option value="invoice">Τιμολόγιο</option>
               </select>
             </div>
-            <div style="grid-column:span 8">
-              <div class="muted">Ονοματεπώνυμο / Επωνυμία</div>
-              <input id="bill_name" class="input" placeholder="Πλήρες όνομα ή επωνυμία">
+
+            <!-- Ονοματεπώνυμο (receipt) -->
+            <div class="rec-only" style="grid-column:span 8">
+              <div class="muted">Ονοματεπώνυμο</div>
+              <input id="bill_full_name" class="input" placeholder="Πλήρες ονοματεπώνυμο">
+            </div>
+
+            <!-- Επωνυμία (invoice) -->
+            <div class="inv-only" style="grid-column:span 8">
+              <div class="muted">Επωνυμία</div>
+              <input id="bill_company_name" class="input" placeholder="Επωνυμία εταιρείας">
             </div>
 
             <!-- Invoice-only -->
+            <div class="inv-only" style="grid-column:span 4">
+              <div class="muted">Επάγγελμα</div>
+              <input id="bill_profession" class="input" placeholder="Επάγγελμα">
+            </div>
+
             <div class="inv-only" style="grid-column:span 4">
               <div class="muted">ΑΦΜ</div>
               <input id="bill_vat" class="input" placeholder="ΑΦΜ">
@@ -195,7 +196,7 @@
     const $ = (s)=>document.querySelector(s);
     const fmt = iso => { if(!iso) return '—'; const d=new Date(iso); return isNaN(d)?'—':d.toLocaleString('el-GR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
 
-    async function requireUser(){ const {data:{user}}=await supabase.auth.getUser(); if(!user){location.href='/login.html';return null;} return user; }
+    async function requireUser(){ const {data:{user}}=await supabase.auth.getUser(); if(!user){location.href='/dashboard-login.html';return null;} return user; }
 
     /* ===== KPIs ===== */
     async function loadBalances(){
@@ -205,8 +206,7 @@
         if(error) throw error; total = (data?.balance ?? 0)|0;
       }catch(e){ console.error('credit_balances', e); }
       try{
-        const { data, error } = await supabase.from('credit_reservations')
-          .select('amount,credits_reserved,status').eq('status','active');
+        const { data, error } = await supabase.from('credit_reservations').select('amount,credits_reserved,status').eq('status','active');
         if(error) throw error;
         reserved = (data||[]).reduce((s,r)=>s+((r.credits_reserved ?? r.amount ?? 0)|0),0);
       }catch(e){ console.warn('credit_reservations', e); }
@@ -215,7 +215,7 @@
       $('#availableCredits').textContent = Math.max(0,total-reserved);
     }
 
-    /* ===== Q&A ===== */
+    /* ===== Q&A (συντομευμένα) ===== */
     async function fetchMyQaAnswers(user){
       const { data, error } = await supabase.from('qa_answers')
         .select('id,created_at,updated_at,email,status,question,answer,agent_draft,user_id')
@@ -223,21 +223,15 @@
       if(error) throw error;
       return (data||[]).filter(r => (r.user_id && r.user_id===user.id) || (r.email && r.email===user.email));
     }
-    // Ερωτήσεις (χωρίς status)
     async function loadQuestions(user){
       try{
         const rows = await fetchMyQaAnswers(user);
         const list = rows.filter(r => r.question && r.question.trim().length);
         const tb = $('#tbodyQuestions'); tb.innerHTML='';
         if(!list.length){ tb.innerHTML='<tr><td class="muted" colspan="2">—</td></tr>'; return; }
-        for(const q of list){
-          const tr=document.createElement('tr');
-          tr.innerHTML=`<td>${fmt(q.created_at)}</td><td>${q.question}</td>`;
-          tb.appendChild(tr);
-        }
+        for(const q of list){ const tr=document.createElement('tr'); tr.innerHTML=`<td>${fmt(q.created_at)}</td><td>${q.question}</td>`; tb.appendChild(tr); }
       }catch(e){ console.error('loadQuestions',e); $('#tbodyQuestions').innerHTML='<tr><td class="muted" colspan="2">—</td></tr>'; }
     }
-    // Απαντήσεις (clamp 3 γραμμές)
     async function loadAnswers(user){
       try{
         const rows = await fetchMyQaAnswers(user);
@@ -247,12 +241,7 @@
         for(const a of list){
           const txt=(a.answer && a.answer.trim().length)?a.answer:(a.agent_draft||'—');
           const tr=document.createElement('tr');
-          tr.innerHTML=`
-            <td>${fmt(a.updated_at||a.created_at)}</td>
-            <td>
-              <div class="answer-text">${txt}</div>
-              <button class="show-more">Περισσότερα</button>
-            </td>`;
+          tr.innerHTML=`<td>${fmt(a.updated_at||a.created_at)}</td><td>${txt}</td>`;
           tb.appendChild(tr);
         }
       }catch(e){ console.error('loadAnswers',e); $('#tbodyAnswers').innerHTML='<tr><td class="muted" colspan="2">—</td></tr>'; }
@@ -269,15 +258,26 @@
     function toggleInvoiceFields(){
       const isInv = $('#bill_doc_type').value==='invoice';
       document.querySelectorAll('.inv-only').forEach(el=>el.style.display = isInv?'block':'none');
+      document.querySelectorAll('.rec-only').forEach(el=>el.style.display = isInv?'none':'block');
     }
+
     async function loadBilling(user){
       try{
         const { data, error } = await supabase.from('user_billing')
-          .select('name,vat,tax_office,email,address,zip,city,country,phone,doc_type')
+          .select('name,profession,vat,tax_office,email,address,zip,city,country,phone,doc_type')
           .eq('user_id', user.id).maybeSingle();
         if(error) throw error;
         const v=data||{};
-        $('#bill_name').value = v.name||'';
+        // Γέμισμα φόρμας
+        $('#bill_doc_type').value = v.doc_type || 'receipt';
+        if((v.doc_type||'receipt')==='invoice'){
+          $('#bill_company_name').value = v.name || '';
+          $('#bill_full_name').value = '';
+        }else{
+          $('#bill_full_name').value = v.name || (user.user_metadata?.name||'');
+          $('#bill_company_name').value = '';
+        }
+        $('#bill_profession').value = v.profession || '';
         $('#bill_vat').value = v.vat||'';
         $('#bill_tax_office').value = v.tax_office||'';
         $('#bill_email').value = v.email || user.email || '';
@@ -286,27 +286,34 @@
         $('#bill_city').value = v.city||'';
         $('#bill_country').value = v.country||'';
         $('#bill_phone').value = v.phone||'';
-        $('#bill_doc_type').value = v.doc_type || 'receipt';
         toggleInvoiceFields();
 
-        // Όνομα: από billing.name, αλλιώς user meta
-        const fallbackName = user.user_metadata?.name || '—';
-        $('#accName').textContent = v.name || fallbackName;
+        // Header όνομα
+        const displayName = v.name || user.user_metadata?.name || '—';
+        $('#accName').textContent = displayName;
       }catch(e){ console.warn('loadBilling', e); }
     }
+
+    function currentDisplayName(){
+      const isInv = $('#bill_doc_type').value==='invoice';
+      return isInv ? ($('#bill_company_name').value.trim()||'') : ($('#bill_full_name').value.trim()||'');
+    }
+
     async function saveBilling(user){
+      const isInv = $('#bill_doc_type').value==='invoice';
       const rec = {
         user_id: user.id,
-        name: $('#bill_name').value.trim()||null,
-        vat: $('#bill_vat').value.trim()||null,
-        tax_office: $('#bill_tax_office').value.trim()||null,
+        name: currentDisplayName() || null,        // Επωνυμία ή Ονοματεπώνυμο
+        profession: isInv ? ($('#bill_profession').value.trim()||null) : null,
+        vat: isInv ? ($('#bill_vat').value.trim()||null) : null,
+        tax_office: isInv ? ($('#bill_tax_office').value.trim()||null) : null,
         email: $('#bill_email').value.trim()||user.email,
-        address: $('#bill_address').value.trim()||null,
-        zip: $('#bill_zip').value.trim()||null,
-        city: $('#bill_city').value.trim()||null,
-        country: $('#bill_country').value.trim()||null,
+        address: isInv ? ($('#bill_address').value.trim()||null) : null,
+        zip: isInv ? ($('#bill_zip').value.trim()||null) : null,
+        city: isInv ? ($('#bill_city').value.trim()||null) : null,
+        country: isInv ? ($('#bill_country').value.trim()||null) : null,
         phone: $('#bill_phone').value.trim()||null,
-        doc_type: $('#bill_doc_type').value||'receipt',
+        doc_type: isInv ? 'invoice' : 'receipt',
         updated_at: new Date().toISOString()
       };
       try{
@@ -338,7 +345,7 @@
     Boot();
   </script>
 
-  <!-- === Prefill Tally: περνάμε full_name + email ως URL params === -->
+  <!-- Prefill Tally με σωστό όνομα (εταιρεία ή ονοματεπώνυμο) -->
   <script>
     function addParams(url, params){
       const u = new URL(url);
@@ -347,20 +354,15 @@
     }
     const askEl = document.getElementById('askBtn');
     askEl?.addEventListener('click', function(){
-      // Παίρνουμε ονοματεπώνυμο & email από τη φόρμα ή/και τα στοιχεία λογαριασμού
-      const fullName = (document.getElementById('bill_name')?.value?.trim()
-                      || document.getElementById('accName')?.textContent?.trim()
-                      || '');
       const email = (document.getElementById('bill_email')?.value?.trim()
                   || document.getElementById('accEmail')?.textContent?.trim()
                   || '');
-
-      // Προσθέτουμε ?full_name=...&email=... στο link της Tally
-      this.href = addParams(this.href, {
-        full_name: fullName,
-        email:     email
-      });
-      // Δεν κάνουμε preventDefault — αφήνουμε τον browser να ανοίξει το link (target=_blank)
+      const fullNameOrCompany = (function(){
+        const type = document.getElementById('bill_doc_type')?.value || 'receipt';
+        if(type==='invoice') return document.getElementById('bill_company_name')?.value?.trim() || '';
+        return document.getElementById('bill_full_name')?.value?.trim() || document.getElementById('accName')?.textContent?.trim() || '';
+      })();
+      this.href = addParams(this.href, { full_name: fullNameOrCompany, email });
     });
   </script>
 </body>
