@@ -27,6 +27,10 @@
     #forgotPanel{ display:none; margin-top:16px; padding:16px; border:1px dashed #ddd; border-radius:12px; background:#fcfcfc; }
     #forgotPanel .row{ margin-top:10px; }
     #recoveryBox{ display:none; margin-top:16px; padding:16px; border:1px dashed #ddd; border-radius:12px; background:#fcfcfc; }
+
+    /* προσθήκες για το hint & disabled signup */
+    .hint { display:block; margin-top:6px; opacity:.75; font-size:.9rem; }
+    .disabled-btn { opacity:.6; pointer-events:none; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -62,13 +66,17 @@
       <div>
         <h3 style="margin:0 0 6px; font-size:16px;">Σύνδεση με Κωδικό</h3>
         <label>Email</label>
-        <input id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" />
+        <!-- προσθήκες: required -->
+        <input id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" required />
         <label>Κωδικός</label>
-        <input id="passwordInput" type="password" placeholder="••••••••" autocomplete="current-password" />
+        <!-- προσθήκες: required + minlength -->
+        <input id="passwordInput" type="password" placeholder="Κωδικός (≥ 6 χαρακτήρες)" autocomplete="current-password" required minlength="6" />
         <div class="row">
           <button id="loginBtn" class="btn" type="button">Σύνδεση</button>
           <button id="signupBtn" class="btn ghost" type="button">Δημιουργία Λογαριασμού</button>
         </div>
+        <!-- μικρό hint για το signup -->
+        <small class="hint">Συμπλήρωσε email &amp; κωδικό και μετά πάτα «Δημιουργία Λογαριασμού».</small>
         <div class="row" style="margin-top:8px;">
           <a id="forgotLink" href="#" style="font-size:13px;color:#0b57d0;text-decoration:none;">Ξέχασα τον κωδικό</a>
         </div>
@@ -247,6 +255,24 @@
   (async ()=>{
     const { data } = await sb.auth.getSession();
     if (data?.session && !location.hash.includes('type=recovery')) goDashboard();
+  })();
+
+  // --- Μικρό UX: κάνε disabled το "Δημιουργία Λογαριασμού" μέχρι να είναι έγκυρη η φόρμα ---
+  (function () {
+    const email = $('emailInput');
+    const pass  = $('passwordInput');
+    const btn   = $('signupBtn');
+    if (!email || !pass || !btn) return;
+
+    const toggle = () => {
+      const ok = email.checkValidity() && pass.value.length >= 6;
+      btn.classList.toggle('disabled-btn', !ok);
+      btn.disabled = !ok;
+    };
+
+    email.addEventListener('input', toggle);
+    pass .addEventListener('input', toggle);
+    toggle(); // αρχικό state
   })();
 </script>
 </body>
