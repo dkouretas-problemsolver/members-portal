@@ -8,7 +8,7 @@
     :root { --brand:#FF6B00; --muted:#777; }
     *{ box-sizing:border-box; }
     body{ font-family: Inter, Arial, sans-serif; margin:0; background:#fafafa; color:#111;}
-    .card{ max-width: 760px; margin: 28px auto; padding: 24px; border:1px solid #eee; border-radius:16px; background:#fff; box-shadow:0 6px 24px rgba(0,0,0,.06);}
+    .card{ max-width: 760px; margin: 28px auto; padding: 24px; border:1px solid #eee; border-radius:16px; background:#fff; box-shadow:0 6px 24px rgba(0,0,0,.06); }
     .logo{ display:flex; justify-content:center; margin-bottom:8px; }
     .logo img{ height:120px; border-radius:14px; }
     h1{ text-align:center; margin: 6px 0 18px; font-size:22px; }
@@ -28,7 +28,6 @@
     #forgotPanel .row{ margin-top:10px; }
     #recoveryBox{ display:none; margin-top:16px; padding:16px; border:1px dashed #ddd; border-radius:12px; background:#fcfcfc; }
 
-    /* προσθήκες για το hint & disabled signup */
     .hint { display:block; margin-top:6px; opacity:.75; font-size:.9rem; }
     .disabled-btn { opacity:.6; pointer-events:none; }
     .hint.bad { color:#7d1a1a }
@@ -70,7 +69,6 @@
         <label>Email</label>
         <input id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" required />
         <label>Κωδικός</label>
-        <!-- ΑΛΛΑΓΗ: placeholder + validation με τους νέους κανόνες -->
         <input id="passwordInput" type="password" placeholder="Κωδικός (≥ 8, A–Z, a–z, 0–9, σύμβολο)" autocomplete="current-password" required />
         <small id="passHint" class="hint">Απαραίτητο: ≥ 8 χαρακτήρες, 1 κεφαλαίο, 1 πεζό, 1 ψηφίο και 1 σύμβολο.</small>
 
@@ -143,7 +141,7 @@
 
   const leftMsg=$('leftMsg'), rightMsg=$('rightMsg'), globalMsg=$('globalMsg');
 
-  // -------- setSession από URL hash και σωστό routing ανά flow --------
+  // setSession από URL hash κ.λπ.
   (async ()=>{
     if (location.hash && /access_token=/.test(location.hash)) {
       const params = new URLSearchParams(location.hash.slice(1));
@@ -166,7 +164,7 @@
     }
   })();
 
-  // -------------------- Auth actions --------------------
+  // Login
   $('loginBtn').onclick = async ()=>{
     hideMsg(leftMsg);
     const email = $('emailInput').value.trim();
@@ -176,23 +174,34 @@
     if (!location.hash.includes('type=recovery')) goDashboard();
   };
 
-  // === Password rules ===
+  // Password rules
   function validPassword(p){
-    return /[A-Z]/.test(p)     // κεφαλαίο
-        && /[a-z]/.test(p)     // πεζό
-        && /[0-9]/.test(p)     // ψηφίο
-        && /[^A-Za-z0-9]/.test(p) // σύμβολο
-        && p.length >= 8;      // μήκος
+    return /[A-Z]/.test(p) && /[a-z]/.test(p) && /[0-9]/.test(p) && /[^A-Za-z0-9]/.test(p) && p.length >= 8;
   }
 
+  // Signup (με προέλεγχο user-exists)
   $('signupBtn').onclick = async ()=>{
     hideMsg(leftMsg);
     const email = $('emailInput').value.trim();
     const password = $('passwordInput').value;
 
-    // client-side guard για τους κανόνες
     if (!validPassword(password)) {
       return showMsg(leftMsg,'Ο κωδικός δεν πληροί τις προϋποθέσεις (≥8, κεφαλαίο, πεζό, ψηφίο, σύμβολο).');
+    }
+
+    // 🔎 Προέλεγχος ύπαρξης χρήστη μέσω Edge Function
+    try {
+      const resp = await fetch('https://sctqieecpfsaszcuqcrv.supabase.co/functions/v1/user-exists', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const { exists } = await resp.json();
+      if (exists) {
+        return showMsg(leftMsg, 'Ο χρήστης ήδη υπάρχει. Κάνε είσοδο ή ανάκτηση κωδικού.', false);
+      }
+    } catch (e) {
+      // fail-open
     }
 
     const { error } = await sb.auth.signUp({
@@ -201,8 +210,6 @@
     });
 
     if (error) {
-      // ✅ ΜΟΝΗ ΖΗΤΟΥΜΕΝΗ ΑΛΛΑΓΗ: πιο «σκληρός» εντοπισμός already-exists
-      const m = (error.message || '').toLowerCase();
       const alreadyExists =
         /(already|exists|registered|conflict)/i.test(error.message || '') ||
         error.code === 'user_already_exists' ||
@@ -210,18 +217,15 @@
         [400, 409, 422].includes(error.status);
 
       if (alreadyExists) {
-        return showMsg(
-          leftMsg,
-          'Ο χρήστης ήδη υπάρχει. Κάνε είσοδο ή ανάκτηση κωδικού.',
-          false
-        );
+        return showMsg(leftMsg,'Ο χρήστης ήδη υπάρχει. Κάνε είσοδο ή ανάκτηση κωδικού.',false);
       }
-      return showMsg(leftMsg, error.message);
+      return showMsg(leftMsg,error.message);
     }
 
     showMsg(leftMsg,'Σου στείλαμε email επιβεβαίωσης.',true);
   };
 
+  // Magic link
   $('magicBtn').onclick = async ()=>{
     hideMsg(rightMsg);
     const email = $('magicEmailInput').value.trim();
@@ -233,6 +237,7 @@
     showMsg(rightMsg,'Σου στείλαμε σύνδεσμο στο email.',true);
   };
 
+  // Google OAuth
   $('googleBtn').onclick = ()=> sb.auth.signInWithOAuth({
     provider:'google', options:{ redirectTo: location.origin + '/' }
   });
@@ -292,7 +297,7 @@
     if (data?.session && !location.hash.includes('type=recovery')) goDashboard();
   })();
 
-  // --- UX: disable "Δημιουργία" μέχρι να είναι σωστά email + password ---
+  // UX: disable "Δημιουργία" μέχρι να είναι σωστά email + password
   (function () {
     const email = $('emailInput');
     const pass  = $('passwordInput');
@@ -311,7 +316,7 @@
 
     email.addEventListener('input', toggle);
     pass .addEventListener('input', toggle);
-    toggle(); // αρχικό state
+    toggle();
   })();
 </script>
 </body>
