@@ -31,6 +31,8 @@
     /* προσθήκες για το hint & disabled signup */
     .hint { display:block; margin-top:6px; opacity:.75; font-size:.9rem; }
     .disabled-btn { opacity:.6; pointer-events:none; }
+    .hint.bad { color:#7d1a1a }
+    .hint.good{ color:#145a2a }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -66,16 +68,16 @@
       <div>
         <h3 style="margin:0 0 6px; font-size:16px;">Σύνδεση με Κωδικό</h3>
         <label>Email</label>
-        <!-- προσθήκες: required -->
         <input id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" required />
         <label>Κωδικός</label>
-        <!-- προσθήκες: required + minlength -->
-        <input id="passwordInput" type="password" placeholder="Κωδικός (≥ 6 χαρακτήρες)" autocomplete="current-password" required minlength="6" />
+        <!-- ΑΛΛΑΓΗ: placeholder + validation με τους νέους κανόνες -->
+        <input id="passwordInput" type="password" placeholder="Κωδικός (≥ 8, A–Z, a–z, 0–9, σύμβολο)" autocomplete="current-password" required />
+        <small id="passHint" class="hint">Απαραίτητο: ≥ 8 χαρακτήρες, 1 κεφαλαίο, 1 πεζό, 1 ψηφίο και 1 σύμβολο.</small>
+
         <div class="row">
           <button id="loginBtn" class="btn" type="button">Σύνδεση</button>
           <button id="signupBtn" class="btn ghost" type="button">Δημιουργία Λογαριασμού</button>
         </div>
-        <!-- μικρό hint για το signup -->
         <small class="hint">Συμπλήρωσε email &amp; κωδικό και μετά πάτα «Δημιουργία Λογαριασμού».</small>
         <div class="row" style="margin-top:8px;">
           <a id="forgotLink" href="#" style="font-size:13px;color:#0b57d0;text-decoration:none;">Ξέχασα τον κωδικό</a>
@@ -152,11 +154,9 @@
       if (access_token && refresh_token) {
         await sb.auth.setSession({ access_token, refresh_token });
 
-        // καθάρισε το hash – κρατάμε flag μόνο αν είναι recovery
         const keepHash = (flow === 'recovery') ? '#type=recovery' : '';
         history.replaceState({}, '', location.pathname + location.search + keepHash);
 
-        // recovery => φόρμα νέου κωδικού, αλλιώς => dashboard
         if (flow === 'recovery') {
           enterRecovery();
         } else {
@@ -176,15 +176,43 @@
     if (!location.hash.includes('type=recovery')) goDashboard();
   };
 
+  // === Password rules ===
+  function validPassword(p){
+    return /[A-Z]/.test(p)     // κεφαλαίο
+        && /[a-z]/.test(p)     // πεζό
+        && /[0-9]/.test(p)     // ψηφίο
+        && /[^A-Za-z0-9]/.test(p) // σύμβολο
+        && p.length >= 8;      // μήκος
+  }
+
   $('signupBtn').onclick = async ()=>{
     hideMsg(leftMsg);
     const email = $('emailInput').value.trim();
     const password = $('passwordInput').value;
+
+    // client-side guard για τους κανόνες
+    if (!validPassword(password)) {
+      return showMsg(leftMsg,'Ο κωδικός δεν πληροί τις προϋποθέσεις (≥8, κεφαλαίο, πεζό, ψηφίο, σύμβολο).');
+    }
+
     const { error } = await sb.auth.signUp({
       email, password,
       options: { emailRedirectTo: location.origin + '/' }
     });
-    if (error) return showMsg(leftMsg,error.message);
+
+    if (error) {
+      // ✨ ειδικός χειρισμός για ήδη-υπάρχον email
+      if (error.status === 400 && /already|exists|registered/i.test(error.message)) {
+        return showMsg(
+          leftMsg,
+          'Το email υπάρχει ήδη. Πήγαινε στην ' +
+          'είσοδο ή κάνε ανάκτηση κωδικού.',
+          false
+        );
+      }
+      return showMsg(leftMsg,error.message);
+    }
+
     showMsg(leftMsg,'Σου στείλαμε email επιβεβαίωσης.',true);
   };
 
@@ -233,6 +261,7 @@
     hideMsg($('recoveryMsg'));
     const p1 = $('newPass1').value, p2 = $('newPass2').value;
     if (!p1 || p1 !== p2) return showMsg($('recoveryMsg'),'Οι κωδικοί δεν ταιριάξαν.');
+    if (!validPassword(p1)) return showMsg($('recoveryMsg'),'Ο κωδικός δεν πληροί τις προϋποθέσεις.');
     const { error } = await sb.auth.updateUser({ password: p1 });
     if (error) return showMsg($('recoveryMsg'),'Σφάλμα: ' + error.message);
     showMsg($('recoveryMsg'),'Ο κωδικός άλλαξε. Μπαίνεις...', true);
@@ -257,15 +286,19 @@
     if (data?.session && !location.hash.includes('type=recovery')) goDashboard();
   })();
 
-  // --- Μικρό UX: κάνε disabled το "Δημιουργία Λογαριασμού" μέχρι να είναι έγκυρη η φόρμα ---
+  // --- UX: disable "Δημιουργία" μέχρι να είναι σωστά email + password ---
   (function () {
     const email = $('emailInput');
     const pass  = $('passwordInput');
     const btn   = $('signupBtn');
+    const hint  = $('passHint');
     if (!email || !pass || !btn) return;
 
     const toggle = () => {
-      const ok = email.checkValidity() && pass.value.length >= 6;
+      const strong = validPassword(pass.value);
+      hint.classList.toggle('good', strong);
+      hint.classList.toggle('bad', !strong);
+      const ok = email.checkValidity() && strong;
       btn.classList.toggle('disabled-btn', !ok);
       btn.disabled = !ok;
     };
